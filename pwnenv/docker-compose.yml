@@ -1,0 +1,15 @@
+services:
+  pwnenv:
+    build:
+      context: .
+      args:
+        UID: $UID
+        GID: $GID
+        USERNAME: $USERNAME
+        GROUPNAME: $GROUPNAME
+    user: $UID:$GID
+    tty: true
+    volumes:
+      - type: bind
+        source: ./workdir
+        target: /home/$USERNAME/workdir
