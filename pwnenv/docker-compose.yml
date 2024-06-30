@@ -1,5 +1,7 @@
 services:
   pwnenv:
+    container_name: pwnenv
+    hostname: pwnenv
     build:
       context: .
       args:
