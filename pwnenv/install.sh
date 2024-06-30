@@ -11,23 +11,12 @@ sudo apt-get update && sudo apt-get install -y \
     netcat \
     patchelf
 
-# editor
-## neovim@0.10.0
-curl -sL https://github.com/neovim/neovim/releases/download/v0.10.0/nvim-linux64.tar.gz -o /tmp/nvim-linux64.tar.gz
-tar -xvf /tmp/nvim-linux64.tar.gz --directory=/tmp
-sudo cp /tmp/nvim-linux64/bin/nvim /usr/bin
-sudo cp -r /tmp/nvim-linux64/share/nvim /usr/share
-rm /tmp/nvim-linux64.tar.gz
-rm -r /tmp/nvim-linux64
-
-## astronvim
-git clone --depth 1 https://github.com/AstroNvim/template ${HOME}/.config/nvim
-rm -rf ${HOME}/.config/nvim/.git
-
 # exploit tools
+
 ## rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source ${HOME}/.cargo/env
+
 ## ropr@0.2.25
 cargo install ropr@0.2.25
 
@@ -57,6 +46,7 @@ rm /tmp/rp-lin
 
 # debug tools
 TOOLS_DIR="${HOME}/tools"
+
 ## radare2@5.9.2
 git clone --depth 1 https://github.com/radareorg/radare2 --branch 5.9.2 ${TOOLS_DIR}/radare2
 cd ${TOOLS_DIR}/radare2 && ./sys/install.sh
