@@ -34,10 +34,15 @@ cargo install ropr@0.2.25
 ## python@3.12.0
 curl -sSf https://rye.astral.sh/get | RYE_INSTALL_OPTION="--yes" bash
 source ${HOME}/.rye/env
-rye toolchain fetch cpython@3.12.0
+cd ${HOME}
+rye init
+rye pin 3.12.0
+
 ## pwntools@4.12.0, ptrlib@2.3.3
-rye install pwntools==4.12.0
-rye install ptrlib==2.3.3
+rye add pwntools==4.12.0
+rye add ptrlib==2.3.3
+rye sync
+rm -rf .git .gitignore README.md ${HOME}/src/$(whoami)
 
 ## rp++@2.1.3
 curl -sL https://github.com/0vercl0k/rp/releases/download/v2.1.3/rp-lin-gcc.zip -o /tmp/rp++.zip

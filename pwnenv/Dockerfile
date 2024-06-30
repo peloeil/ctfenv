@@ -22,7 +22,6 @@ RUN ./install.sh
 
 COPY ./config/.gdbinit /home/${USERNAME}/.gdbinit
 COPY ./config/.bashrc /home/${USERNAME}/.bashrc
-COPY ./config/.python-version /home/${USERNAME}/.python-version
 
 RUN sudo chown -R ${UID}:${GID} /home/${USERNAME}
 WORKDIR /home/${USERNAME}

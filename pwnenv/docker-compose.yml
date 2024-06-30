@@ -13,5 +13,5 @@ services:
     tty: true
     volumes:
       - type: bind
-        source: ./workdir
-        target: /home/$USERNAME/workdir
+        source: ./src
+        target: /home/$USERNAME/src
