@@ -30,6 +30,7 @@ rye pin 3.12.0
 ## pwntools@4.12.0, ptrlib@2.3.3
 rye add pwntools==4.12.0
 rye add ptrlib==2.3.3
+rye add setuptools
 rye sync
 rm -rf .git .gitignore ${HOME}/src/$(whoami)
 
