@@ -7,6 +7,7 @@ sudo apt-get update && sudo apt-get install -y \
     vim \
     curl \
     make \
+    file \
     unzip \
     git \
     netcat \
