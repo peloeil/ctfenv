@@ -31,7 +31,7 @@ rye pin 3.12.0
 rye add pwntools==4.12.0
 rye add ptrlib==2.3.3
 rye sync
-rm -rf .git .gitignore README.md ${HOME}/src/$(whoami)
+rm -rf .git .gitignore ${HOME}/src/$(whoami)
 
 ## rp++@2.1.3
 curl -sL https://github.com/0vercl0k/rp/releases/download/v2.1.3/rp-lin-gcc.zip -o /tmp/rp++.zip
