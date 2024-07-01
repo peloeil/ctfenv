@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # editor
 
 ## neovim@0.10.0
@@ -11,3 +13,15 @@ rm -r /tmp/nvim-linux64
 ## astronvim
 git clone --depth 1 https://github.com/AstroNvim/template ${HOME}/.config/nvim
 rm -rf ${HOME}/.config/nvim/.git
+
+## starship@1.19.0
+sudo apt-get update && sudo apt-get install -y \
+    cmake \
+    && sudo apt-get clean \
+    && sudo rm -rf /var/lib/apt/lists/*
+source ${HOME}/.cargo/env
+cargo install starship@1.19.0
+if [ ! -e ${HOME}/.config ]; then
+    mkdir ${HOME}/.config
+fi
+starship preset gruvbox-rainbow -o ${HOME}/.config/starship.toml
