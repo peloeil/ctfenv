@@ -6,6 +6,7 @@ sudo apt-get update && sudo apt-get install -y \
     gdb \
     vim \
     curl \
+    make \
     unzip \
     git \
     netcat \
