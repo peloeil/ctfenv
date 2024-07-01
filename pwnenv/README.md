@@ -19,13 +19,29 @@ sudo reboot
 ```
 
 ## 使い方
-- 初めに、ユーザー名などを設定するために `set_dotenv.sh` を実行する
+- 初めに、ユーザー名などを設定するために `dotenv.sh` を実行する
 - コンテナの起動: `docker compose up -d`
 - コンテナに接続: `docker exec -it pwnenv /bin/bash`
 - コンテナから出る: `Ctrl-D`
 - コンテナを停止: `docker compose stop`
 - コンテナを削除: `docker compose down`
-- `workdir` の中身のみが保存され、その他の変更はコンテナ削除時に一緒に消える
+- `src` の中身のみが保存され、その他の変更はコンテナ削除時に一緒に消える
 
 ## 詳細
-- テキストエディタは nano, vi, vim, neovim が用意されている
+バージョンが書いていないものは Ubuntu 22.04 (jammy) のデフォルトを使っている。
+詳細は Dockerfile を参照。
+- editor
+    - vi
+    - vim
+    - neovim@0.10.0 (additional)
+- debugger
+    - radare2@5.9.2
+    - gdb
+        - pwndbg@2024.02.14
+        - gef@2024.06
+- exploitation framework (at python@3.12.0)
+    - pwntools@4.12.0
+    - ptrlib@2.3.3
+- ROP gadget finder
+    - ropr@0.2.25
+    - rp++@2.1.3
