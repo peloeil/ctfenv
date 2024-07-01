@@ -25,6 +25,8 @@ RUN ./additional_install.sh && sudo rm -rf /tmp/additional_install.sh
 
 COPY ./config/.gdbinit /home/${USERNAME}/.gdbinit
 COPY ./config/.bashrc /home/${USERNAME}/.bashrc
+COPY ./config/nvim /home/${USERNAME}/.config/nvim
+
 
 RUN sudo chown -R ${UID}:${GID} /home/${USERNAME}
 WORKDIR /home/${USERNAME}

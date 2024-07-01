@@ -11,8 +11,8 @@ rm /tmp/nvim-linux64.tar.gz
 rm -r /tmp/nvim-linux64
 
 ## astronvim
-git clone --depth 1 https://github.com/AstroNvim/template ${HOME}/.config/nvim
-rm -rf ${HOME}/.config/nvim/.git
+#git clone --depth 1 https://github.com/AstroNvim/template ${HOME}/.config/nvim
+#rm -rf ${HOME}/.config/nvim/.git
 
 ## starship@1.19.0
 sudo apt-get update && sudo apt-get install -y \
