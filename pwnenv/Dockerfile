@@ -1,33 +1,44 @@
-FROM --platform=linux/amd64 ubuntu:22.04
+# syntax=docker/dockerfile:1
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Asia/Tokyo
+# configurable variables
+ARG VERSION='24.04'
+ARG HASH='sha256:3afff29dffbc200d202546dc6c4f614edc3b109691e7ab4aa23d02b42ba86790'
+ARG USERNAME='pwn'
 
+# main
+FROM ubuntu:${VERSION}@${HASH}
+ENV DEBIAN_FRONTEND='noninteractive'
+ENV TZ='Asia/Tokyo'
+RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list
+
+## install dependencies
+RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt-get update && apt-get install -y \
+    sudo \
+    tzdata \
+    make \
+    gcc \
+    wget \
+    tmux \
+    git \
+    fish \
+    netcat-openbsd \
+    gdb
+RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sh
+
+## add non-root user
+RUN id ubuntu && userdel ubuntu || true
 ARG USERNAME
-ARG GROUPNAME
-ARG UID
-ARG GID
-RUN useradd -m -s /bin/bash -G sudo -u ${UID} ${USERNAME}
-RUN apt-get update && apt-get install sudo tzdata -y
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN groupadd ${USERNAME} -g 1000 && useradd -m ${USERNAME} -s /bin/fish -u 1000 -g 1000 -G sudo
+RUN echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    && echo "FLAG{REDUCTED}" | tee /flag | tee /flag.txt
 
-COPY ./install.sh /tmp/install.sh
-RUN chmod +x /tmp/install.sh
-#COPY ./additional_install.sh /tmp/additional_install.sh
-#RUN chmod +x /tmp/additional_install.sh
-
-RUN chown -R ${UID}:${GID} /home/${USERNAME}
 USER ${USERNAME}
-
-WORKDIR /tmp
-RUN ./install.sh && sudo rm -rf /tmp/install.sh
-#RUN ./additional_install.sh && sudo rm -rf /tmp/additional_install.sh
-
-COPY ./config/.gdbinit /home/${USERNAME}/.gdbinit
-COPY ./config/.bashrc /home/${USERNAME}/.bashrc
-#COPY ./config/nvim /home/${USERNAME}/.config/nvim
-
-
-RUN sudo chown -R ${UID}:${GID} /home/${USERNAME}
 WORKDIR /home/${USERNAME}
-CMD ["/bin/bash"]
+RUN touch .sudo_as_admin_successful \
+    && mkdir ctf
+
+CMD ["/bin/fish"]
