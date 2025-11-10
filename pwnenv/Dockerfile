@@ -1,31 +1,32 @@
 # syntax=docker/dockerfile:1
 
-# configurable variables
 ARG VERSION='24.04'
-ARG HASH='sha256:3afff29dffbc200d202546dc6c4f614edc3b109691e7ab4aa23d02b42ba86790'
-ARG USERNAME='pwn'
 
-# main
-FROM ubuntu:${VERSION}@${HASH}
+FROM ubuntu:${VERSION}
 ENV DEBIAN_FRONTEND='noninteractive'
 ENV TZ='Asia/Tokyo'
 RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list
 
-## install dependencies
+## prerequisites
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get install -y \
+    build-essential \
     sudo \
     tzdata \
-    make \
-    gcc \
     wget \
-    tmux \
-    git \
-    fish \
-    neovim \
-    netcat-openbsd \
-    gdb
+    curl \
+    git
+
+## non-root user
+RUN id ubuntu && userdel ubuntu || true; \
+    groupadd pwn -g 1000; \
+    useradd -m pwn -s /bin/fish -u 1000 -g 1000 -G sudo; \
+    echo "pwn ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; \
+    echo "FLAG{REDUCTED}" | tee /flag | tee /flag.txt; \
+    touch /home/pwn/.sudo_as_admin_successful
+
+## bata24/gef
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get install -y \
@@ -38,27 +39,50 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     linux-tools-common \
     && wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sh
 
-## add non-root user
-RUN id ubuntu && userdel ubuntu || true
-ARG USERNAME
-RUN groupadd ${USERNAME} -g 1000 && useradd -m ${USERNAME} -s /bin/fish -u 1000 -g 1000 -G sudo
-RUN echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
-    && echo "FLAG{REDUCTED}" | tee /flag | tee /flag.txt
+## gef without root previlege
 RUN cp /root/.gef/.venv-gef/bin/rp-lin /root/.gef/.venv-gef/bin/rp++ \
-    && cp -r /root/.gef /home/${USERNAME}/.gef \
-    && cp /root/.gdbinit /home/${USERNAME}/.gdbinit \
-    && mkdir -p /home/${USERNAME}/.local \
-    && cp -r /root/.local/bin /home/${USERNAME}/.local/bin \
-    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.gef \
-    && chown ${USERNAME}:${USERNAME} /home/${USERNAME}/.gdbinit \
-    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local \
-    && sed -i -e "s|/root/.gef|/home/${USERNAME}/.gef|" /home/${USERNAME}/.gdbinit \
-    && find /home/${USERNAME}/.gef -type f -exec sed -i "s|/root/\.gef|/home/${USERNAME}/.gef|g" {} +
+    && cp -r /root/.gef /home/pwn/.gef \
+    && cp /root/.gdbinit /home/pwn/.gdbinit \
+    && mkdir -p /home/pwn/.local \
+    && cp -r /root/.local/bin /home/pwn/.local/bin \
+    && sed -i -e "s|/root/.gef|/home/pwn/.gef|" /home/pwn/.gdbinit \
+    && find /home/pwn/.gef -type f -exec sed -i "s|/root/\.gef|/home/pwn/.gef|g" {} + \
+    && chown -R pwn:pwn /home/pwn/.gef \
+    && chown pwn:pwn /home/pwn/.gdbinit \
+    && chown -R pwn:pwn /home/pwn/.local
 
-USER ${USERNAME}
-WORKDIR /home/${USERNAME}
+## exploit tools
+RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    apt-get update && apt-get install -y \
+    fish \
+    tmux \
+    netcat-openbsd \
+    gdb
+
+## switch user
+USER pwn
+WORKDIR /home/pwn
+
+## mise
+ENV PATH="/home/pwn/.local/bin:$PATH"
+RUN curl https://mise.run | sh
+RUN git clone https://github.com/peloeil/dotfiles.git \
+    && mkdir -p ~/.config \
+    && cp -r dotfiles/dot_config/mise ~/.config/mise
+RUN mise install uv ripgrep node deno neovim ruff "npm:pyright" "github:llvm/llvm-project"
+RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
+    && cp -r dotfiles/dot_config/tmux ~/.config/tmux \
+    && rm -rf dotfiles
+
+## fish
 RUN mkdir -p .config/fish \
-    && echo "fish_add_path /home/${USERNAME}/.local/bin /home/${USERNAME}/.gef/.venv-gef/bin" >> .config/fish/config.fish \
-    && touch .sudo_as_admin_successful
+    && echo "fish_add_path /home/pwn/.local/bin" >> .config/fish/config.fish \
+    && echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fish \
+    && echo "mise activate fish | source" >> .config/fish/config.fish
+
+## neovim
+RUN fish -c "nvim -c 'sleep 10' -c 'q'"
+RUN fish -c "nvim -c 'sleep 10' -c \"call dpp#sync_ext_action('installer', 'install')\" -c 'q'"
 
 CMD ["/bin/fish"]
