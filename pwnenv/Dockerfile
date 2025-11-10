@@ -16,7 +16,9 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     tzdata \
     wget \
     curl \
-    git
+    git \
+    patchelf \
+    elfutils \
 
 ## non-root user
 RUN id ubuntu && userdel ubuntu || true; \
@@ -70,7 +72,7 @@ RUN curl https://mise.run | sh
 RUN git clone https://github.com/peloeil/dotfiles.git \
     && mkdir -p ~/.config \
     && cp -r dotfiles/dot_config/mise ~/.config/mise
-RUN mise install uv ripgrep node deno neovim ruff "npm:pyright" "github:llvm/llvm-project"
+RUN mise install "github:io12/pwninit" uv ripgrep node deno neovim ruff "npm:pyright" "github:llvm/llvm-project"
 RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
     && cp -r dotfiles/dot_config/tmux ~/.config/tmux \
     && rm -rf dotfiles
