@@ -85,4 +85,21 @@ RUN echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fis
 RUN fish -c "nvim /home/pwn/.config/nvim/init.lua -c 'sleep 5' -c 'w' -c 'sleep 5' -c 'q'"
 RUN fish -c "nvim -c \"call dpp#sync_ext_action('installer', 'install')\" -c 'q'"
 
+ARG PROBLEM_PATH
+ARG BINARY_NAME
+
+USER root
+
+COPY ../../${PROBLEM_PATH}/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
+COPY ../../${PROBLEM_PATH}/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+COPY ../../${PROBLEM_PATH}/${BINARY_NAME} /home/pwn/${BINARY_NAME}
+COPY ../../${PROBLEM_PATH}/attach.sh /home/pwn/attach.sh
+COPY ../../${PROBLEM_PATH}/gdb.py /home/pwn/gdb.py
+
+RUN ldconfig && \
+    chown pwn:pwn /home/pwn/${BINARY_NAME} /home/pwn/attach.sh /home/pwn/gdb.py && \
+    chmod +x /home/pwn/${BINARY_NAME} /home/pwn/attach.sh
+
+USER pwn
+WORKDIR /home/pwn
 CMD ["/bin/fish"]
