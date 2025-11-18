@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     curl \
     git \
     patchelf \
-    elfutils \
+    elfutils
 
 ## non-root user
 RUN id ubuntu && userdel ubuntu || true; \
@@ -72,19 +72,17 @@ RUN curl https://mise.run | sh
 RUN git clone https://github.com/peloeil/dotfiles.git \
     && mkdir -p ~/.config \
     && cp -r dotfiles/dot_config/mise ~/.config/mise
-RUN mise install "github:io12/pwninit" uv ripgrep node deno neovim ruff "npm:pyright" "github:llvm/llvm-project"
+RUN mise install uv ripgrep node deno neovim ruff "npm:pyright" "github:llvm/llvm-project"
 RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
     && cp -r dotfiles/dot_config/tmux ~/.config/tmux \
+    && cp -r dotfiles/dot_config/private_fish ~/.config/fish \
     && rm -rf dotfiles
 
 ## fish
-RUN mkdir -p .config/fish \
-    && echo "fish_add_path /home/pwn/.local/bin" >> .config/fish/config.fish \
-    && echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fish \
-    && echo "mise activate fish | source" >> .config/fish/config.fish
+RUN echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fish
 
 ## neovim
-RUN fish -c "nvim -c 'sleep 10' -c 'q'"
-RUN fish -c "nvim -c 'sleep 10' -c \"call dpp#sync_ext_action('installer', 'install')\" -c 'q'"
+RUN fish -c "nvim /home/pwn/.config/nvim/init.lua -c 'sleep 5' -c 'w' -c 'sleep 5' -c 'q'"
+RUN fish -c "nvim -c \"call dpp#sync_ext_action('installer', 'install')\" -c 'q'"
 
 CMD ["/bin/fish"]
