@@ -37,7 +37,13 @@ validate:
 
 init: validate
 	@echo "[+] running pwninit in $(PROBLEM_PATH)"
-	@-cd "$(PROBLEM_PATH)" && pwninit --bin "./$(BINARY_NAME)" && rm "./$(BINARY_NAME)_patched" solve.py
+	@docker image build \
+		--file ctfenv/pwnenv/pwninit.Dockerfile \
+		--build-arg PROBLEM_PATH="$(PROBLEM_PATH)" \
+		--build-arg BINARY_NAME="$(BINARY_NAME)" \
+		--output type=local,dest="$(PROBLEM_PATH)" \
+		.
+	@mv $(PROBLEM_PATH)/ld-* "$(PROBLEM_PATH)/ld-linux-x86-64.so.2"
 
 	@echo "[+] generating attach.sh / gdb.py / exploit.py under $(PROBLEM_PATH)"
 
