@@ -1,15 +1,19 @@
 # pwnenv
 CTF の pwn 用の個人的な docker 環境
 
+## 前提
+- `Makefile` を `ctf/Makefile` に配置すると仮定したときの各ファイルの配置
+  - `Dockerfile`: `ctf/ctfenv/pwnenv/Dockerfile`
+  - それぞれの問題のディレクトリ: `ctf/<ctf-site-name>/<problem-name>`
+- `ctf/<ctf-site-name>/<problem-name>` には以下があることを仮定
+  - 問題バイナリ
+  - `libc.so.6`
+  - `Dockerfile`
+  - compose ファイル
 
 ## 使い方
-`Makefile` を `ctf/Makefile` に配置するとすると、
-`Dockerfile` は `ctf/ctfenv/pwnenv/Dockerfile` に配置し、
-それぞれの問題のディレクトリは `ctf/<ctf-site-name>/<problem-name>` に配置する。
-
-
-`make init` によって必要なファイルが用意され、設定がなされる。
-`make run` によってコンテナが開始する。
+`make init PROBLEM_PATH=<ctf-site-name>/<problem-name> BINARY_NAME=<binary-name>` によって必要なファイルが用意され、設定がなされる。
+`make run PROBLEM_PATH=<ctf-site-name>/<problem-name> BINARY_NAME=<binary-name>` によってコンテナが開始する。
 
 
 問題によって port は調整する必要がある。
