@@ -110,7 +110,9 @@ init: validate
 		'    stdin_open: true' \
 		'    tty: true' \
 		'    volumes:' \
-		'      - ./exploit.py:/home/pwn/exploit.py:rw' \
+		'      - type: bind' \
+		'        source: ./exploit.py' \
+		'        target: /home/pwn/exploit.py' \
 		>> "$(COMPOSE_FILE)"
 
 run:
