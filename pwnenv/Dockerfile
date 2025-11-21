@@ -25,7 +25,6 @@ RUN id ubuntu && userdel ubuntu || true; \
     groupadd pwn -g 1000; \
     useradd -m pwn -s /bin/fish -u 1000 -g 1000 -G sudo; \
     echo "pwn ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; \
-    echo "FLAG{REDUCTED}" | tee /flag | tee /flag.txt; \
     touch /home/pwn/.sudo_as_admin_successful
 
 ## bata24/gef
