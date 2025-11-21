@@ -78,7 +78,8 @@ RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
     && rm -rf dotfiles
 
 ## fish
-RUN echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fish
+RUN echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fish \
+    && rm .config/fish/conf.d/abbr.fish
 
 ## neovim
 RUN fish -c "nvim /home/pwn/.config/nvim/init.lua -c 'sleep 5' -c 'w' -c 'sleep 5' -c 'q'"
