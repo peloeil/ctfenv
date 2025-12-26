@@ -39,18 +39,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     imagemagick \
     linux-tools-common \
     && wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sh
-
-## gef without root previlege
-RUN cp /root/.gef/.venv-gef/bin/rp-lin /root/.gef/.venv-gef/bin/rp++ \
-    && cp -r /root/.gef /home/pwn/.gef \
-    && cp /root/.gdbinit /home/pwn/.gdbinit \
-    && mkdir -p /home/pwn/.local \
-    && cp -r /root/.local/bin /home/pwn/.local/bin \
-    && sed -i -e "s|/root/.gef|/home/pwn/.gef|" /home/pwn/.gdbinit \
-    && find /home/pwn/.gef -type f -exec sed -i "s|/root/\.gef|/home/pwn/.gef|g" {} + \
-    && chown -R pwn:pwn /home/pwn/.gef \
-    && chown pwn:pwn /home/pwn/.gdbinit \
-    && chown -R pwn:pwn /home/pwn/.local
+RUN cp /root/.gef/.venv-gef/bin/rp-lin /root/.gef/.venv-gef/bin/rp++
 
 ## exploit tools
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
