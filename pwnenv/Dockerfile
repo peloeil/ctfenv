@@ -79,12 +79,12 @@ ARG BINARY_NAME
 
 USER root
 
-COPY ../../${PROBLEM_PATH}/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
-COPY ../../${PROBLEM_PATH}/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
 COPY --chown=pwn:pwn --chmod=744 ../../${PROBLEM_PATH}/${BINARY_NAME} /home/pwn/${BINARY_NAME}
 COPY --chown=pwn:pwn --chmod=744 ../../${PROBLEM_PATH}/attach.sh /home/pwn/attach.sh
 COPY --chown=pwn:pwn ../../${PROBLEM_PATH}/gdb.py /home/pwn/gdb.py
 
+COPY ../../${PROBLEM_PATH}/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
+COPY ../../${PROBLEM_PATH}/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
 RUN ldconfig
 
 USER pwn
