@@ -16,9 +16,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     tzdata \
     wget \
     curl \
-    git \
-    patchelf \
-    elfutils
+    git
 
 ## non-root user
 RUN id ubuntu && userdel ubuntu || true; \
@@ -39,7 +37,6 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     imagemagick \
     linux-tools-common \
     && wget -q https://raw.githubusercontent.com/bata24/gef/dev/install-uv.sh -O- | sh
-RUN cp /root/.gef/.venv-gef/bin/rp-lin /root/.gef/.venv-gef/bin/rp++
 
 ## exploit tools
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -67,24 +64,17 @@ RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
     && rm -rf dotfiles
 
 ## fish
-RUN echo "fish_add_path /home/pwn/.gef/.venv-gef/bin" >> .config/fish/config.fish \
-    && rm .config/fish/conf.d/abbr.fish
+RUN rm .config/fish/conf.d/abbr.fish
 
 ## neovim
 RUN fish -c "nvim /home/pwn/.config/nvim/init.lua -c 'sleep 5' -c 'w' -c 'sleep 5' -c 'q'"
 RUN fish -c "nvim -c \"call dpp#sync_ext_action('installer', 'install')\" -c 'q'"
 
-ARG PROBLEM_PATH
-ARG BINARY_NAME
-
+## libc and ld
 USER root
 
-COPY --chown=pwn:pwn --chmod=744 ../../${PROBLEM_PATH}/${BINARY_NAME} /home/pwn/${BINARY_NAME}
-COPY --chown=pwn:pwn --chmod=744 ../../${PROBLEM_PATH}/attach.sh /home/pwn/attach.sh
-COPY --chown=pwn:pwn ../../${PROBLEM_PATH}/gdb.py /home/pwn/gdb.py
-
-COPY ../../${PROBLEM_PATH}/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
-COPY ../../${PROBLEM_PATH}/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+COPY libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
+COPY ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
 RUN ldconfig
 
 USER pwn

@@ -1,0 +1,15 @@
+  pwnenv:
+    build:
+      context: .
+      dockerfile: stack.Dockerfile
+    pid: "service:<service-name>"
+    cap_add:
+      - "SYS_PTRACE"
+    depends_on:
+      - "<service-name>"
+    stdin_open: true
+    tty: true
+    volumes:
+      - type: bind
+        source: ./exploit.py
+        target: /home/pwn/exploit.py

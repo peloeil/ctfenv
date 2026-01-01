@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+die() {
+    printf 'penv: %s\n' "$*" >&2
+    exit 1
+}
+
+# -------------------------------------
+
+# penv help
+penv_help() {
+    cat << USAGE
+Usage:
+    $0 (help|--help|-h)
+    $0 init (bare|stack|heap|kernel)
+    $0 up
+    $0 run
+USAGE
+}
+
+# penv init
+penv_init_bare() {
+
+}
+
+penv_init_stack() {
+    echo init stack
+}
+
+penv_init_heap() {
+    echo init heap
+}
+
+penv_init_kernel() {
+    echo init kernel
+}
+
+penv_init() {
+    if [ "$argc" -ne "2" ]; then
+        penv_help >&2
+        die "invalid number of arguments"
+    fi
+    case "$mode" in
+        bare)
+            penv_init_bare
+            ;;
+        stack)
+            penv_init_stack
+            ;;
+        heap)
+            penv_init_heap
+            ;;
+        kernel)
+            penv_init_kernel
+            ;;
+        *)
+            die "unknown mode: $mode"
+            ;;
+    esac
+}
+
+# penv up
+penv_up() {
+    echo up
+}
+
+# penv run
+penv_run() {
+    echo run
+}
+
+# entry point
+cmd="${1:-}"
+mode="${2:-}"
+argc="$#"
+case "$cmd" in
+    ""|help|--help|-h)
+        penv_help
+        exit 0
+        ;;
+    init)
+        penv_init
+        ;;
+    up)
+        penv_up
+        ;;
+    run)
+        penv_run
+        ;;
+    *)
+        die "unknown command: $cmd"
+        ;;
+esac
