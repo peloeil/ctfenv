@@ -361,6 +361,7 @@ io = Process("./<binary-name>")
 
 io.interactive()
 EOF
+        chmod +x exploit.py
     fi
 
     if normalize_compose_file; then
@@ -396,6 +397,7 @@ penv_init_stack() {
 
     cp -p "$SCRIPT_DIR/stack/stack.Dockerfile" stack.Dockerfile
     cp -p "$SCRIPT_DIR/stack/exploit.py" exploit.py
+    chmod +x exploit.py
 
     if normalize_compose_file; then
         service_name="$(get_service_name)"
@@ -435,6 +437,7 @@ penv_init_heap() {
     cp -p "$SCRIPT_DIR/heap/gdb.py" gdb.py
     cp -p "$SCRIPT_DIR/heap/attach.sh" attach.sh
     cp -p "$SCRIPT_DIR/heap/exploit.py" exploit.py
+    chmod +x exploit.py
     chmod +x attach.sh
 
     if normalize_compose_file; then
