@@ -53,6 +53,16 @@ get_service_name() {
     ' compose.yaml
 }
 
+get_ubuntu_version() {
+    local dockerfile="$1"
+    local tag arg
+
+    tag="$(awk '/^FROM[[:space:]]+ubuntu:[^@]+@/ { sub(/^FROM[[:space:]]+ubuntu:/, ""); sub(/@.*/, ""); print; exit }' "$dockerfile")"
+    tag="$(printf '%s' "$tag" | tr -d "\"'")"
+    [ -n "$tag" ] || die "ubuntu version not found in $dockerfile"
+    printf '%s\n' "$tag"
+}
+
 get_service_port() {
     local service_name="$1"
     local port
@@ -97,7 +107,8 @@ write_pwnenv_snippet() {
     local out="$1"
     local dockerfile="$2"
     local service_name="$3"
-    shift 3
+    local version="$4"
+    shift 4
     local -a mounts=("$@")
     local src tgt m
 
@@ -106,6 +117,10 @@ write_pwnenv_snippet() {
         echo "    build:"
         echo "      context: ."
         echo "      dockerfile: ${dockerfile}"
+        if [ -n "$version" ]; then
+            echo "      args:"
+            echo "        VERSION: \"${version}\""
+        fi
         if [ -n "$service_name" ]; then
             echo "    pid: \"service:${service_name}\""
             echo "    cap_add:"
@@ -142,14 +157,15 @@ insert_snippet_under_services() {
 add_pwnenv_service() {
     local dockerfile="$1"
     local service_name="$2"
-    shift 2
+    local version="$3"
+    shift 3
     local -a mounts=("$@")
     local snippet
 
     compose_has_pwnenv && return 0
 
     snippet="$(mktemp)"
-    write_pwnenv_snippet "$snippet" "$dockerfile" "$service_name" "${mounts[@]}"
+    write_pwnenv_snippet "$snippet" "$dockerfile" "$service_name" "$version" "${mounts[@]}"
     insert_snippet_under_services compose.yaml "$snippet"
     rm -f "$snippet"
 }
@@ -358,10 +374,10 @@ EOF
     mounts+=("./exploit.py:/home/pwn/exploit.py")
 
     if [ -f compose.yaml ]; then
-        add_pwnenv_service "bare.Dockerfile" "$service_name" "${mounts[@]}"
+        add_pwnenv_service "bare.Dockerfile" "$service_name" "" "${mounts[@]}"
     else
         snippet="$(mktemp)"
-        write_pwnenv_snippet "$snippet" "bare.Dockerfile" "" "${mounts[@]}"
+        write_pwnenv_snippet "$snippet" "bare.Dockerfile" "" "" "${mounts[@]}"
         {
             echo "services:"
             cat "$snippet"
@@ -403,12 +419,12 @@ penv_init_stack() {
         mounts+=("./${binary}:/home/pwn/${binary}")
         mounts+=("./libc.so.6:/home/pwn/libc.so.6")
         mounts+=("./exploit.py:/home/pwn/exploit.py")
-        add_pwnenv_service "stack.Dockerfile" "$service_name" "${mounts[@]}"
+        add_pwnenv_service "stack.Dockerfile" "$service_name" "" "${mounts[@]}"
     fi
 }
 
 penv_init_heap() {
-    local binary service_name port
+    local binary service_name port ubuntu_version
     local -a mounts=()
 
     binary="$(detect_binary)"
@@ -424,6 +440,7 @@ penv_init_heap() {
     else
         service_name=""
     fi
+    ubuntu_version="$(get_ubuntu_version Dockerfile)"
     port="$(get_service_port "$service_name")"
 
     if ! ensure_libc_name; then
@@ -452,7 +469,7 @@ penv_init_heap() {
         mounts+=("./gdb.py:/home/pwn/gdb.py")
         mounts+=("./attach.sh:/home/pwn/attach.sh")
         mounts+=("./exploit.py:/home/pwn/exploit.py")
-        add_pwnenv_service "heap.Dockerfile" "$service_name" "${mounts[@]}"
+        add_pwnenv_service "heap.Dockerfile" "$service_name" "$ubuntu_version" "${mounts[@]}"
     fi
 }
 
@@ -504,7 +521,7 @@ penv_init_kernel() {
         mounts+=("./rootdir:/home/pwn/rootdir")
         [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
         mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
-        add_pwnenv_service "kernel.Dockerfile" "$service_name" "${mounts[@]}"
+        add_pwnenv_service "kernel.Dockerfile" "$service_name" "" "${mounts[@]}"
     fi
 }
 

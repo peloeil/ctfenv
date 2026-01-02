@@ -1,8 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG VERSION='24.04'
-
-FROM ubuntu:${VERSION}
+FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND='noninteractive'
 ENV TZ='Asia/Tokyo'
 RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list
