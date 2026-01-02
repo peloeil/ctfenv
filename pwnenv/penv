@@ -223,17 +223,6 @@ ensure_libc_name() {
     mv "${f#./}" libc.so.6
 }
 
-ensure_ld_name() {
-    local f
-
-    if [ -f ld-linux-x86-64.so.2 ]; then
-        return 0
-    fi
-    f="$(find . -maxdepth 1 -type f \( -name 'ld-*.so*' -o -name 'ld-linux-*.so*' \) -print | head -n1 || true)"
-    [ -n "$f" ] || return 1
-    mv "${f#./}" ld-linux-x86-64.so.2
-}
-
 run_pwninit() {
     command -v pwninit >/dev/null 2>&1 || die "pwninit not found"
     pwninit --bin "./$1" --libc ./libc.so.6
@@ -247,11 +236,12 @@ extract_libc_from_container() {
         sh -c "cat /lib/x86_64-linux-gnu/libc.so.6 || cat /lib64/libc.so.6 || cat /lib/libc.so.6" > libc.so.6
 }
 
-extract_ld_from_container() {
-    local service_name="$1"
+detect_ld_file() {
+    local f
 
-    docker compose -f compose.yaml run --rm --no-deps -T "$service_name" \
-        sh -c "cat /lib64/ld-linux-x86-64.so.2 || cat /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 || cat /lib/ld-linux-x86-64.so.2" > ld-linux-x86-64.so.2
+    f="$(ls -1 ld-*.so* 2>/dev/null | head -n1 || true)"
+    [ -n "$f" ] || return 1
+    printf '%s\n' "$f"
 }
 
 ensure_run_script() {
@@ -390,7 +380,7 @@ EOF
 }
 
 penv_init_stack() {
-    local binary service_name port
+    local binary service_name port snippet ld_file
     local -a mounts=()
 
     binary="$(detect_binary)"
@@ -415,7 +405,7 @@ penv_init_stack() {
 
     run_pwninit "$binary"
     ensure_libc_name
-    ensure_ld_name || true
+    ld_file="$(detect_ld_file || true)"
 
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
 
@@ -433,7 +423,7 @@ penv_init_stack() {
 }
 
 penv_init_heap() {
-    local binary service_name port ubuntu_version
+    local binary service_name port ubuntu_version ld_file
     local -a mounts=()
 
     binary="$(detect_binary)"
@@ -462,12 +452,8 @@ penv_init_heap() {
 
     run_pwninit "$binary"
     ensure_libc_name
-    ensure_ld_name || true
-
-    if [ ! -f ld-linux-x86-64.so.2 ] && [ -f compose.yaml ]; then
-        extract_ld_from_container "$service_name"
-    fi
-    ensure_ld_name
+    ld_file="$(detect_ld_file || true)"
+    [ -n "$ld_file" ] || die "ld not found"
 
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
     replace_placeholders "attach.sh" "$binary" ""
@@ -475,7 +461,7 @@ penv_init_heap() {
     if [ -f compose.yaml ]; then
         mounts+=("./${binary}:/home/pwn/${binary}")
         mounts+=("./libc.so.6:/home/pwn/libc.so.6")
-        mounts+=("./ld-linux-x86-64.so.2:/home/pwn/ld-linux-x86-64.so.2")
+        mounts+=("./${ld_file}:/home/pwn/${ld_file}")
         mounts+=("./gdb.py:/home/pwn/gdb.py")
         mounts+=("./attach.sh:/home/pwn/attach.sh")
         mounts+=("./exploit.py:/home/pwn/exploit.py")
