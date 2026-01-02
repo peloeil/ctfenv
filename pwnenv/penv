@@ -24,8 +24,6 @@ penv_help() {
 Usage:
     $0 (help|--help|-h)
     $0 init (bare|stack|heap|kernel)
-    $0 up
-    $0 run
 USAGE
 }
 
@@ -564,18 +562,6 @@ penv_init() {
     esac
 }
 
-# penv up
-penv_up() {
-    normalize_compose_file || die "compose.yaml not found"
-    docker compose -f compose.yaml up -d --build
-}
-
-# penv run
-penv_run() {
-    normalize_compose_file || die "compose.yaml not found"
-    docker compose -f compose.yaml exec pwnenv /bin/fish
-}
-
 # entry point
 cmd="${1:-}"
 mode="${2:-}"
@@ -588,11 +574,7 @@ case "$cmd" in
     init)
         penv_init
         ;;
-    up)
-        penv_up
         ;;
-    run)
-        penv_run
         ;;
     *)
         die "unknown command: $cmd"
