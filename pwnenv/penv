@@ -479,7 +479,7 @@ penv_init_heap() {
 }
 
 penv_init_kernel() {
-    local service_name
+    local service_name snippet
     local cpio_file
     local -a mounts=()
 
@@ -513,20 +513,29 @@ penv_init_kernel() {
         service_name=""
     fi
 
+    [ -f bzImage ] && mounts+=("./bzImage:/home/pwn/bzImage")
+    [ -f vmlinux ] && mounts+=("./vmlinux:/home/pwn/vmlinux")
+    mounts+=("./run.sh:/home/pwn/run.sh")
+    mounts+=("./dev.sh:/home/pwn/dev.sh")
+    mounts+=("./pack.sh:/home/pwn/pack.sh")
+    mounts+=("./submit.sh:/home/pwn/submit.sh")
+    mounts+=("./upload.py:/home/pwn/upload.py")
+    mounts+=("./gdb.py:/home/pwn/gdb.py")
+    [ -d rootdir ] && mounts+=("./rootdir:/home/pwn/rootdir")
+    [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
+    mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
+
     if [ -f compose.yaml ]; then
         [ -n "$service_name" ] || die "service not found in compose.yaml"
-        [ -f bzImage ] && mounts+=("./bzImage:/home/pwn/bzImage")
-        [ -f vmlinux ] && mounts+=("./vmlinux:/home/pwn/vmlinux")
-        mounts+=("./run.sh:/home/pwn/run.sh")
-        mounts+=("./dev.sh:/home/pwn/dev.sh")
-        mounts+=("./pack.sh:/home/pwn/pack.sh")
-        mounts+=("./submit.sh:/home/pwn/submit.sh")
-        mounts+=("./upload.py:/home/pwn/upload.py")
-        mounts+=("./gdb.py:/home/pwn/gdb.py")
-        mounts+=("./rootdir:/home/pwn/rootdir")
-        [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
-        mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
         add_pwnenv_service "kernel.Dockerfile" "$service_name" "" "${mounts[@]}"
+    else
+        snippet="$(mktemp)"
+        write_pwnenv_snippet "$snippet" "kernel.Dockerfile" "" "" "${mounts[@]}"
+        {
+            echo "services:"
+            cat "$snippet"
+        } > compose.yaml
+        rm -f "$snippet"
     fi
 }
 

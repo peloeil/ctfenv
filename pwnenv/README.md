@@ -57,6 +57,7 @@ CTF の pwn 用の個人的な docker 環境
         - `compose.yaml` があれば、`compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
             - `bzImage`, `vmlinux`, `run.sh`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py`, `gdb.py`, `rootdir/`, `rootfs.cpio`, `rootfs_dev.cpio` はすべて `/home/pwn` にマウントされる
+        - `compose.yaml` がなければ exploit 用の `compose.yaml` を作る
 - `penv up`
     - 問題用コンテナと exploit 用コンテナを開始する (port は調整する必要あり)
 - `penv run`
