@@ -11,7 +11,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ensure_not_initialized() {
     normalize_compose_file || return 0
-    compose_has_pwnenv && die "already initialized (pwnenv exists in compose.yaml)"
+    if compose_has_pwnenv; then
+        die "already initialized (pwnenv exists in compose.yaml)"
+    fi
 }
 
 # -------------------------------------
@@ -100,7 +102,7 @@ get_service_port() {
 }
 
 compose_has_pwnenv() {
-    grep -qE '^[[:space:]]{2}pwnenv:' compose.yaml
+    grep -qE '^[[:space:]]{2}pwnenv:' compose.yaml || return 1
 }
 
 write_pwnenv_snippet() {
