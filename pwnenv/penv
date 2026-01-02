@@ -414,14 +414,19 @@ penv_init_stack() {
     ensure_libc_name
 
     run_pwninit "$binary"
-    rm -f ld-*.so* ld-linux-*.so*
     ensure_libc_name
+    ensure_ld_name || true
 
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
 
     if [ -f compose.yaml ]; then
-        mounts+=("./${binary}:/home/pwn/${binary}")
+        if [ -f "${binary}_patched" ]; then
+            mounts+=("./${binary}_patched:/home/pwn/${binary}")
+        else
+            mounts+=("./${binary}:/home/pwn/${binary}")
+        fi
         mounts+=("./libc.so.6:/home/pwn/libc.so.6")
+        [ -f ld-linux-x86-64.so.2 ] && mounts+=("./ld-linux-x86-64.so.2:/home/pwn/ld-linux-x86-64.so.2")
         mounts+=("./exploit.py:/home/pwn/exploit.py")
         add_pwnenv_service "stack.Dockerfile" "$service_name" "" "${mounts[@]}"
     fi
