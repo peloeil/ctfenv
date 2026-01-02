@@ -7,6 +7,13 @@ die() {
     exit 1
 }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+ensure_not_initialized() {
+    normalize_compose_file || return 0
+    compose_has_pwnenv && die "already initialized (pwnenv exists in compose.yaml)"
+}
+
 # -------------------------------------
 
 # penv help
@@ -20,28 +27,450 @@ Usage:
 USAGE
 }
 
+normalize_compose_file() {
+    if [ -f compose.yaml ]; then
+        return 0
+    fi
+    for f in compose.yml docker-compose.yml docker-compose.yaml; do
+        if [ -f "$f" ]; then
+            mv "$f" compose.yaml
+            break
+        fi
+    done
+    [ -f compose.yaml ]
+}
+
+get_service_name() {
+    awk '
+        /^services:/ { in_services = 1; next }
+        in_services && match($0, /^[[:space:]]{2}([A-Za-z0-9_.-]+):/, m) {
+            if (m[1] != "pwnenv") {
+                print m[1]
+                exit
+            }
+        }
+        in_services && /^[^[:space:]]/ { exit }
+    ' compose.yaml
+}
+
+compose_has_pwnenv() {
+    grep -qE '^[[:space:]]{2}pwnenv:' compose.yaml
+}
+
+write_pwnenv_snippet() {
+    local out="$1"
+    local dockerfile="$2"
+    local service_name="$3"
+    shift 3
+    local -a mounts=("$@")
+    local src tgt m
+
+    {
+        echo "  pwnenv:"
+        echo "    build:"
+        echo "      context: ."
+        echo "      dockerfile: ${dockerfile}"
+        if [ -n "$service_name" ]; then
+            echo "    pid: \"service:${service_name}\""
+            echo "    cap_add:"
+            echo "      - \"SYS_PTRACE\""
+            echo "    depends_on:"
+            echo "      - \"${service_name}\""
+        else
+            echo "    cap_add:"
+            echo "      - \"SYS_PTRACE\""
+        fi
+        echo "    stdin_open: true"
+        echo "    tty: true"
+        if [ "${#mounts[@]}" -gt 0 ]; then
+            echo "    volumes:"
+            for m in "${mounts[@]}"; do
+                src="${m%%:*}"
+                tgt="${m#*:}"
+                echo "      - type: bind"
+                echo "        source: ${src}"
+                echo "        target: ${tgt}"
+            done
+        fi
+    } > "$out"
+}
+
+insert_snippet_under_services() {
+    local compose_file="$1"
+    local snippet_file="$2"
+
+    printf '\n' >> "$compose_file"
+    cat "$snippet_file" >> "$compose_file"
+}
+
+add_pwnenv_service() {
+    local dockerfile="$1"
+    local service_name="$2"
+    shift 2
+    local -a mounts=("$@")
+    local snippet
+
+    compose_has_pwnenv && return 0
+
+    snippet="$(mktemp)"
+    write_pwnenv_snippet "$snippet" "$dockerfile" "$service_name" "${mounts[@]}"
+    insert_snippet_under_services compose.yaml "$snippet"
+    rm -f "$snippet"
+}
+
+escape_sed() {
+    printf '%s' "$1" | sed 's/[&/]/\\&/g'
+}
+
+replace_placeholders() {
+    local path="$1"
+    local binary="$2"
+    local service="$3"
+
+    if [ -n "$binary" ] && grep -q '<binary-name>' "$path"; then
+        sed -i "s/<binary-name>/$(escape_sed "$binary")/g" "$path"
+    fi
+    if [ -n "$service" ] && grep -q '<service-name>' "$path"; then
+        sed -i "s/<service-name>/$(escape_sed "$service")/g" "$path"
+    fi
+}
+
+detect_binary() {
+    local f name
+
+    for f in ./*; do
+        [ -f "$f" ] || continue
+        name="${f#./}"
+        case "$name" in
+            *.py|*.sh|*.yaml|*.yml|*.md|*.txt|*.Dockerfile|Dockerfile|libc.so.6|ld-linux-*|*.so|*.cpio*|bzImage|vmlinux|compose.yaml|compose.yml|docker-compose.yml|docker-compose.yaml|penv)
+                continue
+                ;;
+        esac
+        if file -b "$name" | grep -q 'ELF .* executable'; then
+            printf '%s\n' "$name"
+            return 0
+        fi
+    done
+    die "binary not found"
+}
+
+ensure_libc_name() {
+    local f
+
+    if [ -f libc.so.6 ]; then
+        return 0
+    fi
+    f="$(find . -maxdepth 1 -type f \( -name 'libc.so*' -o -name 'libc-*.so*' \) -print | head -n1 || true)"
+    [ -n "$f" ] || return 1
+    mv "${f#./}" libc.so.6
+}
+
+ensure_ld_name() {
+    local f
+
+    if [ -f ld-linux-x86-64.so.2 ]; then
+        return 0
+    fi
+    f="$(find . -maxdepth 1 -type f \( -name 'ld-*.so*' -o -name 'ld-linux-*.so*' \) -print | head -n1 || true)"
+    [ -n "$f" ] || return 1
+    mv "${f#./}" ld-linux-x86-64.so.2
+}
+
+run_pwninit() {
+    command -v pwninit >/dev/null 2>&1 || die "pwninit not found"
+    pwninit --bin "./$1" --libc ./libc.so.6
+    rm -f solve.py
+}
+
+extract_libc_from_container() {
+    local service_name="$1"
+
+    docker compose -f compose.yaml run --rm --no-deps -T "$service_name" \
+        sh -c "cat /lib/x86_64-linux-gnu/libc.so.6 || cat /lib64/libc.so.6 || cat /lib/libc.so.6" > libc.so.6
+}
+
+extract_ld_from_container() {
+    local service_name="$1"
+
+    docker compose -f compose.yaml run --rm --no-deps -T "$service_name" \
+        sh -c "cat /lib64/ld-linux-x86-64.so.2 || cat /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 || cat /lib/ld-linux-x86-64.so.2" > ld-linux-x86-64.so.2
+}
+
+ensure_run_script() {
+    local candidate
+
+    if [ -f run.sh ]; then
+        return 0
+    fi
+    candidate="$(ls -1 *.sh 2>/dev/null | grep -vE '^(pack|submit|dev)\.sh$' | head -n1 || true)"
+    [ -n "$candidate" ] || die "run.sh not found"
+    mv "$candidate" run.sh
+}
+
+make_dev_sh() {
+    cp run.sh dev.sh
+    if ! grep -qE '(^|[[:space:]])-s([[:space:]]|$)' dev.sh; then
+        if [ "$(tail -c1 dev.sh)" = $'\n' ]; then
+            truncate -s -1 dev.sh
+        fi
+        printf ' \\\n  -s\n' >> dev.sh
+    fi
+    chmod +x dev.sh
+}
+
+detect_cpio_file() {
+    local f
+
+    if [ -f rootfs.cpio ]; then
+        printf '%s\n' "rootfs.cpio"
+        return 0
+    fi
+
+    f="$(find . -maxdepth 1 -type f \( -name '*.cpio' -o -name '*.cpio.gz' -o -name '*.cpio.xz' -o -name '*.cpio.lz4' \) -print | head -n1 || true)"
+    [ -n "$f" ] || return 1
+    printf '%s\n' "${f#./}"
+}
+
+extract_cpio_to_rootdir() {
+    local cpio_file="$1"
+
+    if [ -d rootdir ] && [ -n "$(ls -A rootdir 2>/dev/null)" ]; then
+        return 0
+    fi
+
+    mkdir -p rootdir
+    case "$cpio_file" in
+        *.gz)
+            gzip -dc "$cpio_file" | (cd rootdir && cpio -idv)
+            ;;
+        *.xz)
+            xz -dc "$cpio_file" | (cd rootdir && cpio -idv)
+            ;;
+        *.lz4)
+            lz4 -dc "$cpio_file" | (cd rootdir && cpio -idv)
+            ;;
+        *)
+            (cd rootdir && cpio -idv < "../$cpio_file")
+            ;;
+    esac
+}
+
+ensure_kernel_exploit_c() {
+    if [ -f rootdir/exploit.c ]; then
+        return 0
+    fi
+    mkdir -p rootdir
+    cat << 'EOF' > rootdir/exploit.c
+#include <stdio.h>
+
+int main(void) {
+    return 0;
+}
+EOF
+}
+
+extract_vmlinux() {
+    if [ -f vmlinux ] || [ ! -f bzImage ]; then
+        return 0
+    fi
+    extract-vmlinux bzImage > vmlinux
+}
+
 # penv init
 penv_init_bare() {
+    local binary service_name
+    local -a mounts=()
+    local snippet
 
+    binary="$(detect_binary)"
+
+    cp -p "$SCRIPT_DIR/stack/stack.Dockerfile" bare.Dockerfile
+    if [ ! -f exploit.py ]; then
+        cat << 'EOF' > exploit.py
+#!/usr/bin/env -S uv run
+# /// script
+# dependencies = [
+#     "ptrlib",
+#     "pwntools",
+# ]
+# ///
+
+from ptrlib import *
+
+elf = ELF("./<binary-name>")
+io = Process("./<binary-name>")
+#io = Socket("<service-name>", 9999)
+
+io.interactive()
+EOF
+    fi
+
+    if normalize_compose_file; then
+        service_name="$(get_service_name)"
+    else
+        service_name=""
+    fi
+
+    replace_placeholders "exploit.py" "$binary" "$service_name"
+
+    mounts+=("./${binary}:/home/pwn/${binary}")
+    mounts+=("./exploit.py:/home/pwn/exploit.py")
+
+    if [ -f compose.yaml ]; then
+        add_pwnenv_service "bare.Dockerfile" "$service_name" "${mounts[@]}"
+    else
+        snippet="$(mktemp)"
+        write_pwnenv_snippet "$snippet" "bare.Dockerfile" "" "${mounts[@]}"
+        {
+            echo "services:"
+            cat "$snippet"
+        } > compose.yaml
+        rm -f "$snippet"
+    fi
 }
 
 penv_init_stack() {
-    echo init stack
+    local binary service_name
+    local -a mounts=()
+
+    binary="$(detect_binary)"
+
+    cp -p "$SCRIPT_DIR/stack/stack.Dockerfile" stack.Dockerfile
+    cp -p "$SCRIPT_DIR/stack/exploit.py" exploit.py
+
+    if normalize_compose_file; then
+        service_name="$(get_service_name)"
+    else
+        service_name=""
+    fi
+
+    if ! ensure_libc_name; then
+        [ -f compose.yaml ] || die "libc.so.6 not found"
+        [ -n "$service_name" ] || die "service not found in compose.yaml"
+        extract_libc_from_container "$service_name"
+    fi
+    ensure_libc_name
+
+    run_pwninit "$binary"
+    rm -f ld-*.so* ld-linux-*.so*
+    ensure_libc_name
+
+    replace_placeholders "exploit.py" "$binary" "$service_name"
+
+    if [ -f compose.yaml ]; then
+        mounts+=("./${binary}:/home/pwn/${binary}")
+        mounts+=("./libc.so.6:/home/pwn/libc.so.6")
+        mounts+=("./exploit.py:/home/pwn/exploit.py")
+        add_pwnenv_service "stack.Dockerfile" "$service_name" "${mounts[@]}"
+    fi
 }
 
 penv_init_heap() {
-    echo init heap
+    local binary service_name
+    local -a mounts=()
+
+    binary="$(detect_binary)"
+
+    cp -p "$SCRIPT_DIR/heap/heap.Dockerfile" heap.Dockerfile
+    cp -p "$SCRIPT_DIR/heap/gdb.py" gdb.py
+    cp -p "$SCRIPT_DIR/heap/attach.sh" attach.sh
+    cp -p "$SCRIPT_DIR/heap/exploit.py" exploit.py
+    chmod +x attach.sh
+
+    if normalize_compose_file; then
+        service_name="$(get_service_name)"
+    else
+        service_name=""
+    fi
+
+    if ! ensure_libc_name; then
+        [ -f compose.yaml ] || die "libc.so.6 not found"
+        [ -n "$service_name" ] || die "service not found in compose.yaml"
+        extract_libc_from_container "$service_name"
+    fi
+    ensure_libc_name
+
+    run_pwninit "$binary"
+    ensure_libc_name
+    ensure_ld_name || true
+
+    if [ ! -f ld-linux-x86-64.so.2 ] && [ -f compose.yaml ]; then
+        extract_ld_from_container "$service_name"
+    fi
+    ensure_ld_name
+
+    replace_placeholders "exploit.py" "$binary" "$service_name"
+    replace_placeholders "attach.sh" "$binary" ""
+
+    if [ -f compose.yaml ]; then
+        mounts+=("./${binary}:/home/pwn/${binary}")
+        mounts+=("./libc.so.6:/home/pwn/libc.so.6")
+        mounts+=("./ld-linux-x86-64.so.2:/home/pwn/ld-linux-x86-64.so.2")
+        mounts+=("./gdb.py:/home/pwn/gdb.py")
+        mounts+=("./attach.sh:/home/pwn/attach.sh")
+        mounts+=("./exploit.py:/home/pwn/exploit.py")
+        add_pwnenv_service "heap.Dockerfile" "$service_name" "${mounts[@]}"
+    fi
 }
 
 penv_init_kernel() {
-    echo init kernel
+    local service_name
+    local cpio_file
+    local -a mounts=()
+
+    ensure_run_script
+    make_dev_sh
+
+    cpio_file="$(detect_cpio_file || true)"
+    if [ -n "$cpio_file" ]; then
+        if [ "$cpio_file" != "rootfs.cpio" ]; then
+            mv "$cpio_file" rootfs.cpio
+            sed -i "s/$(escape_sed "$cpio_file")/rootfs.cpio/g" run.sh
+        fi
+        extract_cpio_to_rootdir rootfs.cpio
+    fi
+
+    extract_vmlinux
+
+    cp -p "$SCRIPT_DIR/kernel/kernel.Dockerfile" kernel.Dockerfile
+    cp -p "$SCRIPT_DIR/kernel/gdb.py" gdb.py
+    cp -p "$SCRIPT_DIR/kernel/pack.sh" pack.sh
+    cp -p "$SCRIPT_DIR/kernel/submit.sh" submit.sh
+    cp -p "$SCRIPT_DIR/kernel/upload.py" upload.py
+    chmod +x pack.sh submit.sh
+
+    ensure_kernel_exploit_c
+    touch rootfs_dev.cpio
+
+    if normalize_compose_file; then
+        service_name="$(get_service_name)"
+    else
+        service_name=""
+    fi
+
+    if [ -f compose.yaml ]; then
+        [ -n "$service_name" ] || die "service not found in compose.yaml"
+        [ -f bzImage ] && mounts+=("./bzImage:/home/pwn/bzImage")
+        [ -f vmlinux ] && mounts+=("./vmlinux:/home/pwn/vmlinux")
+        mounts+=("./run.sh:/home/pwn/run.sh")
+        mounts+=("./dev.sh:/home/pwn/dev.sh")
+        mounts+=("./pack.sh:/home/pwn/pack.sh")
+        mounts+=("./submit.sh:/home/pwn/submit.sh")
+        mounts+=("./upload.py:/home/pwn/upload.py")
+        mounts+=("./gdb.py:/home/pwn/gdb.py")
+        mounts+=("./rootdir:/home/pwn/rootdir")
+        [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
+        mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
+        add_pwnenv_service "kernel.Dockerfile" "$service_name" "${mounts[@]}"
+    fi
 }
 
 penv_init() {
-    if [ "$argc" -ne "2" ]; then
+    if [ "$argc" -ne 2 ]; then
         penv_help >&2
         die "invalid number of arguments"
     fi
+    ensure_not_initialized
     case "$mode" in
         bare)
             penv_init_bare
@@ -63,12 +492,14 @@ penv_init() {
 
 # penv up
 penv_up() {
-    echo up
+    normalize_compose_file || die "compose.yaml not found"
+    docker compose -f compose.yaml up -d --build
 }
 
 # penv run
 penv_run() {
-    echo run
+    normalize_compose_file || die "compose.yaml not found"
+    docker compose -f compose.yaml exec pwnenv /bin/fish
 }
 
 # entry point

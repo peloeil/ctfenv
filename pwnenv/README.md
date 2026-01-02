@@ -20,6 +20,17 @@ CTF の pwn 用の個人的な docker 環境
     - `Dockerfile` (optional)
     - `compose.yaml` (optional)
 
+## 個人用の簡略化前提
+- docker compose (v2) のみ使用する (docker-compose は使わない)
+- compose.yaml の services は問題用コンテナ 1 つだけとする
+- `pwninit` と `extract-vmlinux` はホストにインストール済みとする
+- テンプレートはリポジトリ内のものだけを使う
+- kernel の `dev.sh` は `run.sh` をコピーして `-s` を追加したものとする
+- 問題バイナリや libc などはカレントディレクトリで最初に見つかったものを使う
+- `pwninit` 実行後に `solve.py` を削除する
+- stack 問題では `libc.so.6` のみを残し、`ld` は削除する
+- `compose.yaml` に `pwnenv` がある場合は `penv init` しない
+
 ## 使い方
 まず `penv` にパスを通す。
 
