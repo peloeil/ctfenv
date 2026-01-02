@@ -409,16 +409,25 @@ penv_init_stack() {
 
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
 
+    if [ -f "${binary}_patched" ]; then
+        mounts+=("./${binary}_patched:/home/pwn/${binary}")
+    else
+        mounts+=("./${binary}:/home/pwn/${binary}")
+    fi
+    mounts+=("./libc.so.6:/home/pwn/libc.so.6")
+    [ -n "$ld_file" ] && mounts+=("./${ld_file}:/home/pwn/${ld_file}")
+    mounts+=("./exploit.py:/home/pwn/exploit.py")
+
     if [ -f compose.yaml ]; then
-        if [ -f "${binary}_patched" ]; then
-            mounts+=("./${binary}_patched:/home/pwn/${binary}")
-        else
-            mounts+=("./${binary}:/home/pwn/${binary}")
-        fi
-        mounts+=("./libc.so.6:/home/pwn/libc.so.6")
-        [ -f ld-linux-x86-64.so.2 ] && mounts+=("./ld-linux-x86-64.so.2:/home/pwn/ld-linux-x86-64.so.2")
-        mounts+=("./exploit.py:/home/pwn/exploit.py")
         add_pwnenv_service "stack.Dockerfile" "$service_name" "" "${mounts[@]}"
+    else
+        snippet="$(mktemp)"
+        write_pwnenv_snippet "$snippet" "stack.Dockerfile" "" "" "${mounts[@]}"
+        {
+            echo "services:"
+            cat "$snippet"
+        } > compose.yaml
+        rm -f "$snippet"
     fi
 }
 
