@@ -20,22 +20,8 @@ CTF の pwn 用の個人的な docker 環境
     - `Dockerfile` (optional)
     - `compose.yaml` (optional)
 
-## 個人用の簡略化前提
-- docker compose (v2) のみ使用する (docker-compose は使わない)
-- compose.yaml の services は問題用コンテナ 1 つだけとする
-- `pwninit` と `extract-vmlinux` はホストにインストール済みとする
-- テンプレートはリポジトリ内のものだけを使う
-- kernel の `dev.sh` は `run.sh` をコピーして `-s` を追加したものとする
-- 問題バイナリや libc などはカレントディレクトリで最初に見つかったものを使う
-- `pwninit` 実行後に `solve.py` を削除する
-- stack 問題では `libc.so.6` のみを残し、`ld` は削除する
-- `compose.yaml` に `pwnenv` がある場合は `penv init` しない
-
-## 使い方
-まず `penv` にパスを通す。
-
-- `penv init (bare|stack|heap|kernel)`
-    その問題における環境構築を行う。
+## 説明
+- `penv init (bare|stack|heap|kernel)`: その問題における環境構築を行う。
     - bare
         - `exploit.py` を用意する
         - exploit 用コンテナの `compose.yaml` を用意する
@@ -48,17 +34,18 @@ CTF の pwn 用の個人的な docker 環境
         - compose file があれば、そのファイル名を `compose.yaml` に統一する
         - `compose.yaml` があれば、`compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
-            - 問題バイナリ, `libc.so.6`, `exploit.py` はすべて `/home/pwn` にマウントされる
+            - 問題バイナリ, `libc.so.6`, ld, `exploit.py` はすべて `/home/pwn` にマウントされる
+        - `compose.yaml` がなければ exploit 用の `compose.yaml` を作る
     - heap
         - libc がない場合は問題用コンテナから libc を抽出する
         - pwninit で libc を unstrip し、対応する ld も用意する
+        - Dockerfile が無い場合は stack 問題として扱う
         - `gdb.py`, `attach.sh`, `exploit.py` を用意する
         - デバッグシンボル付き libc のファイル名を`libc.so.6` に統一する
-        - ld の名前を `ld-linux-x86-64.so.2` に統一する
         - compose file の名前を `compose.yaml` に統一する
         - `compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
-            - 問題バイナリ, `libc.so.6`, `ld-linux-x86-64.so.2`, `gdb.py`, `attach.sh`, `exploit.py` はすべて `/home/pwn` にマウントされる
+            - 問題バイナリ, `libc.so.6`, ld, `gdb.py`, `attach.sh`, `exploit.py` はすべて `/home/pwn` にマウントされる
     - kernel
         - `vmlinux` がない場合は `extract-vmlinux` で `vmlinux` を抽出する
         - cpio を `rootdir` ディレクトリに展開する
@@ -75,14 +62,9 @@ CTF の pwn 用の個人的な docker 環境
 - `penv run`
     - exploit 用コンテナに入る
 
-## 詳細
-- tmux + neovim on fish で編集
-    - 設定は自分の dotfiles から取ってきている
-- gdb
-    - bata24/gef
-- exploitation framework
-    - pwntools
-    - ptrlib
-- ROP gadget finder
-    - ropr
-    - rp++
+## 注意
+- malloc, free の仕様を使う問題であっても、Dockerfile と compose file が配布されていない場合 stack 問題として扱う
+- heap 問題として扱うのは注意が必要
+    - stack 問題として扱っても、バイナリはデバッグシンボル付き libc に patchelf されているため、libc 内部の挙動やシンボル解決は問題ない
+    - exploit 用コンテナの libc, ld を置き換えるため不安定な可能性がある
+    - libc の配置されるアドレスのアラインメントがホストのファイルシステムに一部依存したりするため、純粋に問題サーバーの環境と合わせたい場合のみ heap 問題として扱う
