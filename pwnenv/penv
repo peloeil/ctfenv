@@ -22,8 +22,11 @@ ensure_not_initialized() {
 penv_help() {
     cat << USAGE
 Usage:
-    $0 (help|--help|-h)
-    $0 init (bare|stack|heap|kernel)
+    penv (help|--help|-h)
+    penv init (bare|stack|heap|kernel)
+    penv info
+    penv check
+    penv clean
 USAGE
 }
 
@@ -170,6 +173,26 @@ add_pwnenv_service() {
     rm -f "$snippet"
 }
 
+remove_pwnenv_service() {
+    local tmp
+
+    [ -f compose.yaml ] || return 0
+    tmp="$(mktemp)"
+    awk '
+        BEGIN { skip = 0 }
+        /^  pwnenv:/ { skip = 1; next }
+        skip {
+            if (match($0, /^[[:space:]]{2}[A-Za-z0-9_.-]+:/)) {
+                skip = 0
+                print
+            }
+            next
+        }
+        { print }
+    ' compose.yaml > "$tmp"
+    mv "$tmp" compose.yaml
+}
+
 escape_sed() {
     printf '%s' "$1" | sed 's/[&/]/\\&/g'
 }
@@ -191,7 +214,7 @@ replace_placeholders() {
     fi
 }
 
-detect_binary() {
+detect_binary_optional() {
     local f name
 
     for f in ./*; do
@@ -207,7 +230,11 @@ detect_binary() {
             return 0
         fi
     done
-    die "binary not found"
+    return 1
+}
+
+detect_binary() {
+    detect_binary_optional || die "binary not found"
 }
 
 ensure_libc_name() {
@@ -320,6 +347,112 @@ extract_vmlinux() {
         return 0
     fi
     extract-vmlinux bzImage > vmlinux
+}
+
+# penv info
+penv_info() {
+    local binary service_name port ld_file ubuntu_version patched
+
+    if normalize_compose_file; then
+        service_name="$(get_service_name)"
+    else
+        service_name=""
+    fi
+    port="$(get_service_port "$service_name")"
+
+    if binary="$(detect_binary_optional)"; then
+        :
+    else
+        binary=""
+    fi
+    if [ -n "$binary" ] && [ -f "${binary}_patched" ]; then
+        patched="${binary}_patched"
+    else
+        patched=""
+    fi
+
+    ld_file="$(detect_ld_file || true)"
+
+    if [ -f Dockerfile ]; then
+        ubuntu_version="$(awk '/^FROM[[:space:]]+ubuntu:[^@]+@/ { sub(/^FROM[[:space:]]+ubuntu:/, ""); sub(/@.*/, ""); print; exit }' Dockerfile)"
+        ubuntu_version="$(printf '%s' "$ubuntu_version" | tr -d "\"'")"
+    else
+        ubuntu_version=""
+    fi
+
+    printf 'binary: %s\n' "${binary:-missing}"
+    printf 'patched: %s\n' "${patched:-missing}"
+    printf 'libc: %s\n' "$([ -f libc.so.6 ] && echo libc.so.6 || echo missing)"
+    printf 'ld: %s\n' "${ld_file:-missing}"
+    printf 'dockerfile: %s\n' "$([ -f Dockerfile ] && echo Dockerfile || echo missing)"
+    [ -n "$ubuntu_version" ] && printf 'ubuntu: %s\n' "$ubuntu_version"
+    printf 'compose: %s\n' "$([ -f compose.yaml ] && echo compose.yaml || echo missing)"
+    printf 'service: %s\n' "${service_name:-missing}"
+    printf 'port: %s\n' "${port:-missing}"
+}
+
+# penv check
+penv_check() {
+    local binary cpio_file mode
+
+    if [ -f bzImage ] || detect_cpio_file >/dev/null 2>&1; then
+        mode="kernel"
+    elif [ -f libc.so.6 ]; then
+        if [ -f Dockerfile ]; then
+            mode="stack or heap"
+        else
+            mode="stack"
+        fi
+    else
+        mode="bare"
+    fi
+
+    if binary="$(detect_binary_optional)"; then
+        :
+    else
+        binary=""
+    fi
+
+    printf 'mode: %s\n' "$mode"
+    printf 'binary: %s\n' "${binary:-missing}"
+    printf 'libc: %s\n' "$([ -f libc.so.6 ] && echo present || echo missing)"
+    printf 'dockerfile: %s\n' "$([ -f Dockerfile ] && echo present || echo missing)"
+    printf 'compose: %s\n' "$([ -f compose.yaml ] && echo present || echo missing)"
+    printf 'bzImage: %s\n' "$([ -f bzImage ] && echo present || echo missing)"
+    printf 'run.sh: %s\n' "$([ -f run.sh ] && echo present || echo missing)"
+    if cpio_file="$(detect_cpio_file 2>/dev/null)"; then
+        printf 'cpio: %s\n' "$cpio_file"
+    else
+        printf 'cpio: missing\n'
+    fi
+}
+
+# penv clean
+penv_clean() {
+    local ts
+
+    if [ -f exploit.py ]; then
+        ts="$(date +%Y%m%d%H%M%S)"
+        cp -p exploit.py "exploit.py.bak.${ts}"
+        rm -f exploit.py
+    fi
+
+    remove_pwnenv_service
+
+    rm -f \
+        bare.Dockerfile \
+        stack.Dockerfile \
+        heap.Dockerfile \
+        kernel.Dockerfile \
+        gdb.py \
+        attach.sh \
+        dev.sh \
+        pack.sh \
+        submit.sh \
+        upload.py \
+        solve.py \
+        rootfs_dev.cpio \
+        *_patched
 }
 
 # penv init
@@ -574,7 +707,14 @@ case "$cmd" in
     init)
         penv_init
         ;;
+    info)
+        penv_info
         ;;
+    check)
+        penv_check
+        ;;
+    clean)
+        penv_clean
         ;;
     *)
         die "unknown command: $cmd"
