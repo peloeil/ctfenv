@@ -53,6 +53,42 @@ get_service_name() {
     ' compose.yaml
 }
 
+get_service_port() {
+    local service_name="$1"
+    local port
+
+    if [ ! -f compose.yaml ]; then
+        printf '%s\n' "9999"
+        return 0
+    fi
+
+    port="$(awk -v svc="$service_name" '
+        /^services:/ { in_services = 1; next }
+        in_services && match($0, /^[[:space:]]{2}([A-Za-z0-9_.-]+):/, m) {
+            in_service = (svc == "" || m[1] == svc)
+            in_ports = 0
+            next
+        }
+        in_service && $1 == "ports:" { in_ports = 1; next }
+        in_service && in_ports && $1 == "-" {
+            value = $0
+            sub(/^[[:space:]]*-[[:space:]]*/, "", value)
+            print value
+            exit
+        }
+        in_service && /^[^[:space:]]/ { exit }
+    ' compose.yaml)"
+
+    port="$(printf '%s' "$port" | tr -d "\"'")"
+    port="${port%%/*}"
+    port="${port##*:}"
+    if [ -n "$port" ]; then
+        printf '%s\n' "$port"
+    else
+        printf '%s\n' "9999"
+    fi
+}
+
 compose_has_pwnenv() {
     grep -qE '^[[:space:]]{2}pwnenv:' compose.yaml
 }
@@ -126,12 +162,16 @@ replace_placeholders() {
     local path="$1"
     local binary="$2"
     local service="$3"
+    local port="${4:-}"
 
     if [ -n "$binary" ] && grep -q '<binary-name>' "$path"; then
         sed -i "s/<binary-name>/$(escape_sed "$binary")/g" "$path"
     fi
     if [ -n "$service" ] && grep -q '<service-name>' "$path"; then
         sed -i "s/<service-name>/$(escape_sed "$service")/g" "$path"
+    fi
+    if [ -n "$port" ] && grep -q '<port>' "$path"; then
+        sed -i "s/<port>/${port}/g" "$path"
     fi
 }
 
@@ -278,7 +318,7 @@ extract_vmlinux() {
 
 # penv init
 penv_init_bare() {
-    local binary service_name
+    local binary service_name port
     local -a mounts=()
     local snippet
 
@@ -299,7 +339,7 @@ from ptrlib import *
 
 elf = ELF("./<binary-name>")
 io = Process("./<binary-name>")
-#io = Socket("<service-name>", 9999)
+#io = Socket("<service-name>", <port>)
 
 io.interactive()
 EOF
@@ -311,7 +351,8 @@ EOF
         service_name=""
     fi
 
-    replace_placeholders "exploit.py" "$binary" "$service_name"
+    port="$(get_service_port "$service_name")"
+    replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
 
     mounts+=("./${binary}:/home/pwn/${binary}")
     mounts+=("./exploit.py:/home/pwn/exploit.py")
@@ -330,7 +371,7 @@ EOF
 }
 
 penv_init_stack() {
-    local binary service_name
+    local binary service_name port
     local -a mounts=()
 
     binary="$(detect_binary)"
@@ -343,6 +384,7 @@ penv_init_stack() {
     else
         service_name=""
     fi
+    port="$(get_service_port "$service_name")"
 
     if ! ensure_libc_name; then
         [ -f compose.yaml ] || die "libc.so.6 not found"
@@ -355,7 +397,7 @@ penv_init_stack() {
     rm -f ld-*.so* ld-linux-*.so*
     ensure_libc_name
 
-    replace_placeholders "exploit.py" "$binary" "$service_name"
+    replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
 
     if [ -f compose.yaml ]; then
         mounts+=("./${binary}:/home/pwn/${binary}")
@@ -366,7 +408,7 @@ penv_init_stack() {
 }
 
 penv_init_heap() {
-    local binary service_name
+    local binary service_name port
     local -a mounts=()
 
     binary="$(detect_binary)"
@@ -382,6 +424,7 @@ penv_init_heap() {
     else
         service_name=""
     fi
+    port="$(get_service_port "$service_name")"
 
     if ! ensure_libc_name; then
         [ -f compose.yaml ] || die "libc.so.6 not found"
@@ -399,7 +442,7 @@ penv_init_heap() {
     fi
     ensure_ld_name
 
-    replace_placeholders "exploit.py" "$binary" "$service_name"
+    replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
     replace_placeholders "attach.sh" "$binary" ""
 
     if [ -f compose.yaml ]; then
