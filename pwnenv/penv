@@ -287,13 +287,30 @@ ensure_run_script() {
     mv "$candidate" run.sh
 }
 
+strip_trailing_newlines() {
+    local path="$1"
+    local last_byte
+
+    while [ -s "$path" ]; do
+        last_byte="$(tail -c1 "$path")"
+        if [ -z "$last_byte" ]; then
+            truncate -s -1 "$path"
+            continue
+        fi
+        break
+    done
+}
+
 make_dev_sh() {
     cp run.sh dev.sh
     if ! grep -qE '(^|[[:space:]])-s([[:space:]]|$)' dev.sh; then
-        if [ "$(tail -c1 dev.sh)" = $'\n' ]; then
-            truncate -s -1 dev.sh
+        strip_trailing_newlines dev.sh
+        if ! tail -n1 dev.sh | grep -q '\\$'; then
+            printf ' \\\n' >> dev.sh
+        else
+            printf '\n' >> dev.sh
         fi
-        printf ' \\\n  -s\n' >> dev.sh
+        printf '    -s\n' >> dev.sh
     fi
     chmod +x dev.sh
 }
