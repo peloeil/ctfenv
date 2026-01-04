@@ -321,16 +321,16 @@ extract_cpio_to_rootdir() {
     mkdir -p rootdir
     case "$cpio_file" in
         *.gz)
-            gzip -dc "$cpio_file" | (cd rootdir && cpio -idv)
+            gzip -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
             ;;
         *.xz)
-            xz -dc "$cpio_file" | (cd rootdir && cpio -idv)
+            xz -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
             ;;
         *.lz4)
-            lz4 -dc "$cpio_file" | (cd rootdir && cpio -idv)
+            lz4 -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
             ;;
         *)
-            (cd rootdir && cpio -idv < "../$cpio_file")
+            (cd rootdir && cpio -idv < "../$cpio_file") || true
             ;;
     esac
 }
