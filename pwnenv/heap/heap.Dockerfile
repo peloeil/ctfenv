@@ -65,6 +65,14 @@ RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
 
 ## fish
 RUN rm .config/fish/conf.d/abbr.fish
+RUN mkdir -p /home/pwn/.config/fish/conf.d \
+    && cat << 'EOF' > /home/pwn/.config/fish/conf.d/auto_tmux.fish
+if status is-interactive
+    if not set -q TMUX
+        tmux new-session -A -s pwn
+    end
+end
+EOF
 
 ## neovim
 RUN fish -c "nvim /home/pwn/.config/nvim/init.lua -c 'sleep 5' -c 'w' -c 'sleep 5' -c 'q'"

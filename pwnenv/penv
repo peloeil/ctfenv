@@ -269,6 +269,13 @@ detect_ld_file() {
     printf '%s\n' "$f"
 }
 
+ensure_tmux_conf() {
+    if [ -f tmux.conf ]; then
+        return 0
+    fi
+    cp -p "$SCRIPT_DIR/tmux.conf" tmux.conf
+}
+
 ensure_run_script() {
     local candidate
 
@@ -493,9 +500,11 @@ EOF
 
     port="$(get_service_port "$service_name")"
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
+    ensure_tmux_conf
 
     mounts+=("./${binary}:/home/pwn/${binary}")
     mounts+=("./exploit.py:/home/pwn/exploit.py")
+    mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
 
     if [ -f compose.yaml ]; then
         add_pwnenv_service "bare.Dockerfile" "$service_name" "" "${mounts[@]}"
@@ -539,6 +548,7 @@ penv_init_stack() {
     ld_file="$(detect_ld_file || true)"
 
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
+    ensure_tmux_conf
 
     if [ -f "${binary}_patched" ]; then
         mounts+=("./${binary}_patched:/home/pwn/${binary}")
@@ -548,6 +558,7 @@ penv_init_stack() {
     mounts+=("./libc.so.6:/home/pwn/libc.so.6")
     [ -n "$ld_file" ] && mounts+=("./${ld_file}:/home/pwn/${ld_file}")
     mounts+=("./exploit.py:/home/pwn/exploit.py")
+    mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
 
     if [ -f compose.yaml ]; then
         add_pwnenv_service "stack.Dockerfile" "$service_name" "" "${mounts[@]}"
@@ -597,6 +608,7 @@ penv_init_heap() {
 
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
     replace_placeholders "attach.sh" "$binary" ""
+    ensure_tmux_conf
 
     if [ -f compose.yaml ]; then
         mounts+=("./${binary}:/home/pwn/${binary}")
@@ -605,6 +617,7 @@ penv_init_heap() {
         mounts+=("./gdb.py:/home/pwn/gdb.py")
         mounts+=("./attach.sh:/home/pwn/attach.sh")
         mounts+=("./exploit.py:/home/pwn/exploit.py")
+        mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
         add_pwnenv_service "heap.Dockerfile" "$service_name" "$ubuntu_version" "${mounts[@]}"
     fi
 }
@@ -637,6 +650,7 @@ penv_init_kernel() {
 
     ensure_kernel_exploit_c
     touch rootfs_dev.cpio
+    ensure_tmux_conf
 
     if normalize_compose_file; then
         service_name="$(get_service_name)"
@@ -655,6 +669,7 @@ penv_init_kernel() {
     [ -d rootdir ] && mounts+=("./rootdir:/home/pwn/rootdir")
     [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
     mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
+    mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
 
     if [ -f compose.yaml ]; then
         [ -n "$service_name" ] || die "service not found in compose.yaml"
