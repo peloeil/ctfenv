@@ -432,6 +432,27 @@ penv_check() {
     else
         printf 'cpio: missing\n'
     fi
+
+    printf 'deps:\n'
+    for d in bash awk sed grep find file cpio docker pwninit extract-vmlinux; do
+        if command -v "$d" >/dev/null 2>&1; then
+            printf '  %s: ok\n' "$d"
+        else
+            printf '  %s: missing\n' "$d"
+        fi
+    done
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        printf '  docker compose: ok\n'
+    else
+        printf '  docker compose: missing\n'
+    fi
+    for d in gzip xz lz4; do
+        if command -v "$d" >/dev/null 2>&1; then
+            printf '  %s (optional): ok\n' "$d"
+        else
+            printf '  %s (optional): missing\n' "$d"
+        fi
+    done
 }
 
 # penv clean

@@ -20,6 +20,24 @@ CTF の pwn 用の個人的な docker 環境
     - `Dockerfile` (optional)
     - `compose.yaml` (optional)
 
+## 依存関係
+ホストに以下のコマンドが必要。
+
+- 共通
+    - `bash`
+    - `awk`, `sed`, `grep`, `find`, `file`
+    - `docker`
+    - `docker compose`
+    - `cpio`
+- stack/heap
+    - `pwninit`
+- kernel
+    - `extract-vmlinux`
+- optional（cpio が圧縮されている場合）
+    - `gzip`, `xz`, `lz4`
+
+`penv check` で依存関係の有無を確認できる。
+
 ## 説明
 - `penv init (bare|stack|heap|kernel)`: その問題における環境構築を行う。
     - bare
@@ -59,7 +77,7 @@ CTF の pwn 用の個人的な docker 環境
             - `bzImage`, `vmlinux`, `run.sh`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py`, `gdb.py`, `rootdir/`, `rootfs.cpio`, `rootfs_dev.cpio` はすべて `/home/pwn` にマウントされる
         - `compose.yaml` がなければ exploit 用の `compose.yaml` を作る
 - `penv info`: バイナリ/`libc.so.6`/ld/Dockerfile/compose などの有無、サービス名とポート番号を表示する
-- `penv check`: 推定した問題タイプと、主要ファイルの有無を表示する
+- `penv check`: 推定した問題タイプと、主要ファイル/依存関係の有無を表示する
 - `penv clean`: `penv init` で作ったファイルを削除する（`exploit.py` は `exploit.py.bak.<timestamp>` にバックアップしてから削除）
 ## 注意
 - malloc, free の仕様を使う問題であっても、Dockerfile と compose file が配布されていない場合 stack 問題として扱う
