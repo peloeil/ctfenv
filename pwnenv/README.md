@@ -68,7 +68,7 @@ CTF の pwn 用の個人的な docker 環境
     - kernel
         - `vmlinux` がない場合は `extract-vmlinux` で `vmlinux` を抽出する
         - cpio を `rootdir` ディレクトリに展開する
-        - `rootdir/exploit.c`, `gdb.py`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py` を用意する
+        - `src/exploit.c`, `gdb.py`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py` を用意する
         - startup script のファイル名を `run.sh` に統一する
         - cpio のファイル名を `rootfs.cpio` に統一する
             - `run.sh` 内のファイル名も変更する

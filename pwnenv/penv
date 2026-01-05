@@ -353,17 +353,11 @@ extract_cpio_to_rootdir() {
 }
 
 ensure_kernel_exploit_c() {
-    if [ -f rootdir/exploit.c ]; then
+    if [ -f src/exploit.c ]; then
         return 0
     fi
-    mkdir -p rootdir
-    cat << 'EOF' > rootdir/exploit.c
-#include <stdio.h>
-
-int main(void) {
-    return 0;
-}
-EOF
+    mkdir -p src
+    cp -p "$SCRIPT_DIR/kernel/exploit.c" src/exploit.c
 }
 
 extract_vmlinux() {
