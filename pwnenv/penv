@@ -303,6 +303,7 @@ strip_trailing_newlines() {
 
 make_dev_sh() {
     cp run.sh dev.sh
+    sed -i "s/rootfs/rootfs_dev/g" dev.sh
     if ! grep -qE '(^|[[:space:]])-s([[:space:]]|$)' dev.sh; then
         strip_trailing_newlines dev.sh
         if ! tail -n1 dev.sh | grep -q '\\$'; then
