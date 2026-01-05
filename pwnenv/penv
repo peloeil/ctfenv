@@ -681,7 +681,7 @@ penv_init_kernel() {
     cp -p "$SCRIPT_DIR/kernel/pack.sh" pack.sh
     cp -p "$SCRIPT_DIR/kernel/submit.sh" submit.sh
     cp -p "$SCRIPT_DIR/kernel/upload.py" upload.py
-    chmod +x pack.sh submit.sh
+    chmod +x pack.sh submit.sh upload.py
 
     ensure_kernel_exploit_c
     touch rootfs_dev.cpio

@@ -15,7 +15,9 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     tzdata \
     wget \
     curl \
-    git
+    git \
+    cpio \
+    upx
 
 ## non-root user
 RUN id ubuntu && userdel ubuntu || true; \
