@@ -40,6 +40,7 @@ CTF の pwn 用の個人的な docker 環境
 
 ## 説明
 - `penv init (bare|stack|heap|kernel)`: その問題における環境構築を行う。
+    - `src/` があれば `/home/pwn/src` にマウントする
     - bare
         - `exploit.py` を用意する
         - exploit 用コンテナの `compose.yaml` を用意する

@@ -543,6 +543,7 @@ EOF
     mounts+=("./${binary}:/home/pwn/${binary}")
     mounts+=("./exploit.py:/home/pwn/exploit.py")
     mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
+    [ -d src ] && mounts+=("./src:/home/pwn/src")
 
     if [ -f compose.yaml ]; then
         add_pwnenv_service "bare.Dockerfile" "$service_name" "" "${mounts[@]}"
@@ -597,6 +598,7 @@ penv_init_stack() {
     [ -n "$ld_file" ] && mounts+=("./${ld_file}:/home/pwn/${ld_file}")
     mounts+=("./exploit.py:/home/pwn/exploit.py")
     mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
+    [ -d src ] && mounts+=("./src:/home/pwn/src")
 
     if [ -f compose.yaml ]; then
         add_pwnenv_service "stack.Dockerfile" "$service_name" "" "${mounts[@]}"
@@ -656,6 +658,7 @@ penv_init_heap() {
         mounts+=("./attach.sh:/home/pwn/attach.sh")
         mounts+=("./exploit.py:/home/pwn/exploit.py")
         mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
+        [ -d src ] && mounts+=("./src:/home/pwn/src")
         add_pwnenv_service "heap.Dockerfile" "$service_name" "$ubuntu_version" "${mounts[@]}"
     fi
 }
@@ -708,6 +711,7 @@ penv_init_kernel() {
     [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
     mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
     mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
+    [ -d src ] && mounts+=("./src:/home/pwn/src")
 
     if [ -f compose.yaml ]; then
         [ -n "$service_name" ] || die "service not found in compose.yaml"
