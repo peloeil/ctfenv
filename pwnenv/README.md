@@ -72,6 +72,7 @@ CTF の pwn 用の個人的な docker 環境
         - startup script のファイル名を `run.sh` に統一する
         - cpio のファイル名を `rootfs.cpio` に統一する
             - `run.sh` 内のファイル名も変更する
+        - `.gitignore` を用意し、`vmlinux`, `rootdir/`, `rootfs_dev.cpio` を除外する
         - compose file があれば、そのファイル名を `compose.yaml` に統一する
         - `compose.yaml` があれば、`compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
