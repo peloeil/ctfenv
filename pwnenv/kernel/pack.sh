@@ -1,7 +1,10 @@
 #!/bin/sh
 
 # musl static link
-musl-gcc -static ${CFLAGS:-} -o rootdir/exploit src/exploit.c
+musl-gcc -static ${CFLAGS:-} src/exploit.c -o rootdir/exploit
+#gcc -S src/exploit.c -o asm.S
+#musl-gcc -static ${CFLAGS:-} asm.S -o rootdir/exploit
+#rm asm.S
 
 # dev cpio
 cd rootdir
