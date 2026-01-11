@@ -359,6 +359,7 @@ ensure_kernel_exploit_c() {
     fi
     mkdir -p src
     cp -p "$SCRIPT_DIR/kernel/exploit.c" src/exploit.c
+    cp -rp "$SCRIPT_DIR/kernel/template" src/template
 }
 
 extract_vmlinux() {
