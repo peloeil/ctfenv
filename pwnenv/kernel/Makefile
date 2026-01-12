@@ -1,12 +1,11 @@
 PACKER ?= pack
 EXCLUDE_SRCS ?=
 
-SRCS := $(filter-out $(EXCLUDE_SRCS), $(wildcard src/*.c *.c))
+SRCS := $(filter-out $(EXCLUDE_SRCS), $(shell find ./src -name "*.c"))
 ASMS := $(patsubst %.c, %.s, $(SRCS))
 CFLAGS ?=
 
-
-.PHONY: enter pack pack-gcc run submit
+.PHONY: enter pack pack-gcc run submit clean
 
 enter:
 	@# pwnenv サービスが起動しているか確認し、していない場合のみ up する
@@ -36,3 +35,6 @@ submit: $(PACKER)
 	strip -s ./rootdir/exploit
 	upx ./rootdir/exploit
 	./upload.py
+
+clean:
+	$(RM) $(ASMS)

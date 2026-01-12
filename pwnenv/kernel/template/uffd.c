@@ -1,6 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif  // _GNU_SOURCE
 #include <assert.h>
 #include <fcntl.h>
 #include <linux/userfaultfd.h>
