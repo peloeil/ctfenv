@@ -569,7 +569,7 @@ penv_init_stack() {
     ensure_libc_name
     ld_file="$(detect_ld_file || true)"
 
-    replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
+    replace_placeholders "exploit.py" "$binary_patched" "$service_name" "$port"
     ensure_tmux_conf
 
     if [ -f compose.yaml ]; then
@@ -617,8 +617,8 @@ penv_init_heap() {
     ld_file="$(detect_ld_file || true)"
     [ -n "$ld_file" ] || die "ld not found"
 
-    replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
-    replace_placeholders "attach.sh" "$binary" ""
+    replace_placeholders "exploit.py" "$binary_patched" "$service_name" "$port"
+    replace_placeholders "attach.sh" "$binary_patched" ""
     ensure_tmux_conf
 
     if [ -f compose.yaml ]; then
