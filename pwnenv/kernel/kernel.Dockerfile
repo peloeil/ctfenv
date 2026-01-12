@@ -80,4 +80,5 @@ EOF
 RUN fish -c "nvim /home/pwn/.config/nvim/init.lua -c 'sleep 5' -c 'w' -c 'sleep 5' -c 'q'"
 RUN fish -c "nvim -c \"call dpp#sync_ext_action('installer', 'install')\" -c 'q'"
 
+WORKDIR /home/pwn/kernel
 CMD ["/bin/fish"]

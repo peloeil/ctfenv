@@ -86,5 +86,5 @@ COPY ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
 RUN ldconfig
 
 USER pwn
-WORKDIR /home/pwn
+WORKDIR /home/pwn/heap
 CMD ["/bin/fish"]
