@@ -1,12 +1,10 @@
-# Exclude sources from build (space-separated paths or patterns).
+PACKER ?= pack
 EXCLUDE_SRCS ?=
 
 SRCS := $(filter-out $(EXCLUDE_SRCS), $(wildcard src/*.c *.c))
 ASMS := $(patsubst %.c, %.s, $(SRCS))
 CFLAGS ?=
 
-# デフォルトのビルドターゲットを指定 (変更したい場合は make run PACKER=pack-gcc とする)
-PACKER ?= pack
 
 .PHONY: enter pack pack-gcc run submit
 
