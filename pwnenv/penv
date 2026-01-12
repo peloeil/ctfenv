@@ -20,7 +20,7 @@ ensure_not_initialized() {
 
 # penv help
 penv_help() {
-    cat << USAGE
+    cat <<USAGE
 Usage:
     penv (help|--help|-h)
     penv init (bare|stack|heap|kernel)
@@ -141,15 +141,15 @@ write_pwnenv_snippet() {
         echo "      - type: bind"
         echo "        source: ./"
         echo "        target: /home/pwn/${dockerfile%.Dockerfile}"
-    } > "$out"
+    } >"$out"
 }
 
 insert_snippet_under_services() {
     local compose_file="$1"
     local snippet_file="$2"
 
-    printf '\n' >> "$compose_file"
-    cat "$snippet_file" >> "$compose_file"
+    printf '\n' >>"$compose_file"
+    cat "$snippet_file" >>"$compose_file"
 }
 
 add_pwnenv_service() {
@@ -183,7 +183,7 @@ remove_pwnenv_service() {
             next
         }
         { print }
-    ' compose.yaml > "$tmp"
+    ' compose.yaml >"$tmp"
     mv "$tmp" compose.yaml
 }
 
@@ -215,9 +215,9 @@ detect_binary_optional() {
         [ -f "$f" ] || continue
         name="${f#./}"
         case "$name" in
-            *.py|*.sh|*.yaml|*.yml|*.md|*.txt|*.Dockerfile|Dockerfile|libc.so.6|ld-linux-*|*.so|*.cpio*|bzImage|vmlinux|compose.yaml|compose.yml|docker-compose.yml|docker-compose.yaml|penv)
-                continue
-                ;;
+        *.py | *.sh | *.yaml | *.yml | *.md | *.txt | *.Dockerfile | Dockerfile | libc.so.6 | ld-linux-* | *.so | *.cpio* | bzImage | vmlinux | compose.yaml | compose.yml | docker-compose.yml | docker-compose.yaml | penv)
+            continue
+            ;;
         esac
         if file -b "$name" | grep -q 'ELF .* executable'; then
             printf '%s\n' "$name"
@@ -252,7 +252,7 @@ extract_libc_from_container() {
     local service_name="$1"
 
     docker compose -f compose.yaml run --rm --no-deps -T "$service_name" \
-        sh -c "cat /lib/x86_64-linux-gnu/libc.so.6 || cat /lib64/libc.so.6 || cat /lib/libc.so.6" > libc.so.6
+        sh -c "cat /lib/x86_64-linux-gnu/libc.so.6 || cat /lib64/libc.so.6 || cat /lib/libc.so.6" >libc.so.6
 }
 
 detect_ld_file() {
@@ -301,11 +301,11 @@ make_dev_sh() {
     if ! grep -qE '(^|[[:space:]])-s([[:space:]]|$)' dev.sh; then
         strip_trailing_newlines dev.sh
         if ! tail -n1 dev.sh | grep -q '\\$'; then
-            printf ' \\\n' >> dev.sh
+            printf ' \\\n' >>dev.sh
         else
-            printf '\n' >> dev.sh
+            printf '\n' >>dev.sh
         fi
-        printf '    -s\n' >> dev.sh
+        printf '    -s\n' >>dev.sh
     fi
     chmod +x dev.sh
 }
@@ -332,18 +332,18 @@ extract_cpio_to_rootdir() {
 
     mkdir -p rootdir
     case "$cpio_file" in
-        *.gz)
-            gzip -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
-            ;;
-        *.xz)
-            xz -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
-            ;;
-        *.lz4)
-            lz4 -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
-            ;;
-        *)
-            (cd rootdir && cpio -idv < "../$cpio_file") || true
-            ;;
+    *.gz)
+        gzip -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        ;;
+    *.xz)
+        xz -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        ;;
+    *.lz4)
+        lz4 -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        ;;
+    *)
+        (cd rootdir && cpio -idv <"../$cpio_file") || true
+        ;;
     esac
 }
 
@@ -360,7 +360,7 @@ extract_vmlinux() {
     if [ -f vmlinux ] || [ ! -f bzImage ]; then
         return 0
     fi
-    extract-vmlinux bzImage > vmlinux
+    extract-vmlinux bzImage >vmlinux
 }
 
 # penv info
@@ -499,7 +499,7 @@ penv_init_bare() {
 
     cp -p "$SCRIPT_DIR/stack/stack.Dockerfile" bare.Dockerfile
     if [ ! -f exploit.py ]; then
-        cat << 'EOF' > exploit.py
+        cat <<'EOF' >exploit.py
 #!/usr/bin/env -S uv run
 # /// script
 # dependencies = [
@@ -537,7 +537,7 @@ EOF
         {
             echo "services:"
             cat "$snippet"
-        } > compose.yaml
+        } >compose.yaml
         rm -f "$snippet"
     fi
 }
@@ -580,7 +580,7 @@ penv_init_stack() {
         {
             echo "services:"
             cat "$snippet"
-        } > compose.yaml
+        } >compose.yaml
         rm -f "$snippet"
     fi
 }
@@ -673,7 +673,7 @@ penv_init_kernel() {
         {
             echo "services:"
             cat "$snippet"
-        } > compose.yaml
+        } >compose.yaml
         rm -f "$snippet"
     fi
 }
@@ -685,21 +685,21 @@ penv_init() {
     fi
     ensure_not_initialized
     case "$mode" in
-        bare)
-            penv_init_bare
-            ;;
-        stack)
-            penv_init_stack
-            ;;
-        heap)
-            penv_init_heap
-            ;;
-        kernel)
-            penv_init_kernel
-            ;;
-        *)
-            die "unknown mode: $mode"
-            ;;
+    bare)
+        penv_init_bare
+        ;;
+    stack)
+        penv_init_stack
+        ;;
+    heap)
+        penv_init_heap
+        ;;
+    kernel)
+        penv_init_kernel
+        ;;
+    *)
+        die "unknown mode: $mode"
+        ;;
     esac
 }
 
@@ -708,23 +708,23 @@ cmd="${1:-}"
 mode="${2:-}"
 argc="$#"
 case "$cmd" in
-    ""|help|--help|-h)
-        penv_help
-        exit 0
-        ;;
-    init)
-        penv_init
-        ;;
-    info)
-        penv_info
-        ;;
-    check)
-        penv_check
-        ;;
-    clean)
-        penv_clean
-        ;;
-    *)
-        die "unknown command: $cmd"
-        ;;
+"" | help | --help | -h)
+    penv_help
+    exit 0
+    ;;
+init)
+    penv_init
+    ;;
+info)
+    penv_info
+    ;;
+check)
+    penv_check
+    ;;
+clean)
+    penv_clean
+    ;;
+*)
+    die "unknown command: $cmd"
+    ;;
 esac
