@@ -112,8 +112,6 @@ write_pwnenv_snippet() {
     local service_name="$3"
     local version="$4"
     shift 4
-    local -a mounts=("$@")
-    local src tgt m
 
     {
         echo "  pwnenv:"
@@ -136,16 +134,13 @@ write_pwnenv_snippet() {
         fi
         echo "    stdin_open: true"
         echo "    tty: true"
-        if [ "${#mounts[@]}" -gt 0 ]; then
-            echo "    volumes:"
-            for m in "${mounts[@]}"; do
-                src="${m%%:*}"
-                tgt="${m#*:}"
-                echo "      - type: bind"
-                echo "        source: ${src}"
-                echo "        target: ${tgt}"
-            done
-        fi
+        echo "    volumes:"
+        echo "      - type: bind"
+        echo "        source: ./tmux.conf"
+        echo "        target: /home/pwn/.tmux.conf"
+        echo "      - type: bind"
+        echo "        source: ./"
+        echo "        target: /home/pwn/${dockerfile%.Dockerfile}"
     } > "$out"
 }
 
@@ -162,13 +157,12 @@ add_pwnenv_service() {
     local service_name="$2"
     local version="$3"
     shift 3
-    local -a mounts=("$@")
     local snippet
 
     compose_has_pwnenv && return 0
 
     snippet="$(mktemp)"
-    write_pwnenv_snippet "$snippet" "$dockerfile" "$service_name" "$version" "${mounts[@]}"
+    write_pwnenv_snippet "$snippet" "$dockerfile" "$service_name" "$version"
     insert_snippet_under_services compose.yaml "$snippet"
     rm -f "$snippet"
 }
@@ -499,7 +493,6 @@ penv_clean() {
 # penv init
 penv_init_bare() {
     local binary service_name port
-    local -a mounts=()
     local snippet
 
     binary="$(detect_binary)"
@@ -536,16 +529,11 @@ EOF
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
     ensure_tmux_conf
 
-    mounts+=("./${binary}:/home/pwn/${binary}")
-    mounts+=("./exploit.py:/home/pwn/exploit.py")
-    mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
-    [ -d src ] && mounts+=("./src:/home/pwn/src")
-
     if [ -f compose.yaml ]; then
-        add_pwnenv_service "bare.Dockerfile" "$service_name" "" "${mounts[@]}"
+        add_pwnenv_service "bare.Dockerfile" "$service_name" ""
     else
         snippet="$(mktemp)"
-        write_pwnenv_snippet "$snippet" "bare.Dockerfile" "" "" "${mounts[@]}"
+        write_pwnenv_snippet "$snippet" "bare.Dockerfile" "" ""
         {
             echo "services:"
             cat "$snippet"
@@ -556,7 +544,6 @@ EOF
 
 penv_init_stack() {
     local binary service_name port snippet ld_file
-    local -a mounts=()
 
     binary="$(detect_binary)"
 
@@ -585,22 +572,11 @@ penv_init_stack() {
     replace_placeholders "exploit.py" "$binary" "$service_name" "$port"
     ensure_tmux_conf
 
-    if [ -f "${binary}_patched" ]; then
-        mounts+=("./${binary}_patched:/home/pwn/${binary}")
-    else
-        mounts+=("./${binary}:/home/pwn/${binary}")
-    fi
-    mounts+=("./libc.so.6:/home/pwn/libc.so.6")
-    [ -n "$ld_file" ] && mounts+=("./${ld_file}:/home/pwn/${ld_file}")
-    mounts+=("./exploit.py:/home/pwn/exploit.py")
-    mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
-    [ -d src ] && mounts+=("./src:/home/pwn/src")
-
     if [ -f compose.yaml ]; then
-        add_pwnenv_service "stack.Dockerfile" "$service_name" "" "${mounts[@]}"
+        add_pwnenv_service "stack.Dockerfile" "$service_name" ""
     else
         snippet="$(mktemp)"
-        write_pwnenv_snippet "$snippet" "stack.Dockerfile" "" "" "${mounts[@]}"
+        write_pwnenv_snippet "$snippet" "stack.Dockerfile" "" ""
         {
             echo "services:"
             cat "$snippet"
@@ -611,7 +587,6 @@ penv_init_stack() {
 
 penv_init_heap() {
     local binary service_name port ubuntu_version ld_file
-    local -a mounts=()
 
     binary="$(detect_binary)"
 
@@ -647,22 +622,13 @@ penv_init_heap() {
     ensure_tmux_conf
 
     if [ -f compose.yaml ]; then
-        mounts+=("./${binary}:/home/pwn/${binary}")
-        mounts+=("./libc.so.6:/home/pwn/libc.so.6")
-        mounts+=("./${ld_file}:/home/pwn/${ld_file}")
-        mounts+=("./gdb.py:/home/pwn/gdb.py")
-        mounts+=("./attach.sh:/home/pwn/attach.sh")
-        mounts+=("./exploit.py:/home/pwn/exploit.py")
-        mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
-        [ -d src ] && mounts+=("./src:/home/pwn/src")
-        add_pwnenv_service "heap.Dockerfile" "$service_name" "$ubuntu_version" "${mounts[@]}"
+        add_pwnenv_service "heap.Dockerfile" "$service_name" "$ubuntu_version"
     fi
 }
 
 penv_init_kernel() {
     local service_name snippet
     local cpio_file
-    local -a mounts=()
 
     ensure_run_script
     make_dev_sh
@@ -698,26 +664,12 @@ penv_init_kernel() {
         service_name=""
     fi
 
-    [ -f bzImage ] && mounts+=("./bzImage:/home/pwn/bzImage")
-    [ -f vmlinux ] && mounts+=("./vmlinux:/home/pwn/vmlinux")
-    mounts+=("./run.sh:/home/pwn/run.sh")
-    mounts+=("./dev.sh:/home/pwn/dev.sh")
-    mounts+=("./pack.sh:/home/pwn/pack.sh")
-    mounts+=("./submit.sh:/home/pwn/submit.sh")
-    mounts+=("./upload.py:/home/pwn/upload.py")
-    mounts+=("./gdb.py:/home/pwn/gdb.py")
-    [ -d rootdir ] && mounts+=("./rootdir:/home/pwn/rootdir")
-    [ -f rootfs.cpio ] && mounts+=("./rootfs.cpio:/home/pwn/rootfs.cpio")
-    mounts+=("./rootfs_dev.cpio:/home/pwn/rootfs_dev.cpio")
-    mounts+=("./tmux.conf:/home/pwn/.tmux.conf")
-    [ -d src ] && mounts+=("./src:/home/pwn/src")
-
     if [ -f compose.yaml ]; then
         [ -n "$service_name" ] || die "service not found in compose.yaml"
-        add_pwnenv_service "kernel.Dockerfile" "$service_name" "" "${mounts[@]}"
+        add_pwnenv_service "kernel.Dockerfile" "$service_name" ""
     else
         snippet="$(mktemp)"
-        write_pwnenv_snippet "$snippet" "kernel.Dockerfile" "" "" "${mounts[@]}"
+        write_pwnenv_snippet "$snippet" "kernel.Dockerfile" "" ""
         {
             echo "services:"
             cat "$snippet"

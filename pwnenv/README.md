@@ -40,11 +40,16 @@ CTF の pwn 用の個人的な docker 環境
 
 ## 説明
 - `penv init (bare|stack|heap|kernel)`: その問題における環境構築を行う。
-    - `src/` があれば `/home/pwn/src` にマウントする
+    - `./tmux.conf` を `/home/pwn/.tmux.conf` にマウントする
+    - `./` を `/home/pwn/` にマウントする
+    - `Makefile` を用意する
+        - `enter`: docker 環境を立ち上げて入る
+        - `pack`: exploit スクリプトをコンパイルして cpio にまとめる(kernel 問題のみ)
+        - `run`: stack, heap 問題では exploit.py を実行する。kernel 問題では pack して dev.sh を実行する
+        - `submit`: サイズを最適化して pack を行った後、upload.py を実行する(kernel 問題のみ)
     - bare
         - `exploit.py` を用意する
         - exploit 用コンテナの `compose.yaml` を用意する
-            - 問題バイナリ、`exploit.py` はすべて `/home/pwn` にマウントされる
     - stack
         - libc がない場合は問題用コンテナから libc を抽出する
         - pwninit で libc を unstrip する
@@ -53,7 +58,6 @@ CTF の pwn 用の個人的な docker 環境
         - compose file があれば、そのファイル名を `compose.yaml` に統一する
         - `compose.yaml` があれば、`compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
-            - 問題バイナリ, `libc.so.6`, ld, `exploit.py` はすべて `/home/pwn` にマウントされる
         - `compose.yaml` がなければ exploit 用の `compose.yaml` を作る
     - heap
         - libc がない場合は問題用コンテナから libc を抽出する
@@ -64,11 +68,10 @@ CTF の pwn 用の個人的な docker 環境
         - compose file の名前を `compose.yaml` に統一する
         - `compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
-            - 問題バイナリ, `libc.so.6`, ld, `gdb.py`, `attach.sh`, `exploit.py` はすべて `/home/pwn` にマウントされる
     - kernel
         - `vmlinux` がない場合は `extract-vmlinux` で `vmlinux` を抽出する
         - cpio を `rootdir` ディレクトリに展開する
-        - `src/exploit.c`, `gdb.py`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py` を用意する
+        - `src/exploit.c`, `src/template/`, `gdb.py`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py` を用意する
         - startup script のファイル名を `run.sh` に統一する
         - cpio のファイル名を `rootfs.cpio` に統一する
             - `run.sh` 内のファイル名も変更する
@@ -76,7 +79,6 @@ CTF の pwn 用の個人的な docker 環境
         - compose file があれば、そのファイル名を `compose.yaml` に統一する
         - `compose.yaml` があれば、`compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
-            - `bzImage`, `vmlinux`, `run.sh`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py`, `gdb.py`, `rootdir/`, `rootfs.cpio`, `rootfs_dev.cpio` はすべて `/home/pwn` にマウントされる
         - `compose.yaml` がなければ exploit 用の `compose.yaml` を作る
 - `penv info`: バイナリ/`libc.so.6`/ld/Dockerfile/compose などの有無、サービス名とポート番号を表示する
 - `penv check`: 推定した問題タイプと、主要ファイル/依存関係の有無を表示する
