@@ -8,11 +8,11 @@
 #include <stdlib.h>
 
 #ifdef DEFINE_GLOBALS
-# define GLOBAL
-# define INIT(x) = x
+#define GLOBAL
+#define INIT(x) = x
 #else
-# define GLOBAL extern
-# define INIT(x)
+#define GLOBAL extern
+#define INIT(x)
 #endif
 
 /* ------------------- uneditable ------------------- */
@@ -22,6 +22,7 @@
 GLOBAL uint64_t user_cs, user_ss, user_rsp, user_rflags;
 GLOBAL cpu_set_t t1_cpu, t2_cpu;
 GLOBAL uint64_t kbase INIT(default_kbase);
+GLOBAL uint64_t kheap INIT(0);
 
 /* -------------------- editable -------------------- */
 // addresses

