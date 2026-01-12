@@ -7,13 +7,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef DEFINE_GLOBALS
+# define GLOBAL
+# define INIT(x) = x
+#else
+# define GLOBAL extern
+# define INIT(x)
+#endif
+
 /* ------------------- uneditable ------------------- */
 #define DUMMY_VALUE (0xdddddddddddddddd)
 #define default_kbase (0xffffffff81000000)
 #define kbase_offset (kbase - default_kbase)
-uint64_t user_cs, user_ss, user_rsp, user_rflags;
-cpu_set_t t1_cpu, t2_cpu;
-uint64_t kbase = default_kbase;
+GLOBAL uint64_t user_cs, user_ss, user_rsp, user_rflags;
+GLOBAL cpu_set_t t1_cpu, t2_cpu;
+GLOBAL uint64_t kbase INIT(default_kbase);
 
 /* -------------------- editable -------------------- */
 // addresses
@@ -29,6 +37,6 @@ uint64_t kbase = default_kbase;
 #define bypass_kpti (DUMMY_VALUE + kbase_offset)
 
 // config variables
-bool kaslr = true;
+GLOBAL bool kaslr INIT(true);
 
 #endif  // __KPWN_VARS_H

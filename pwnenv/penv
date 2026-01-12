@@ -276,7 +276,7 @@ ensure_run_script() {
     if [ -f run.sh ]; then
         return 0
     fi
-    candidate="$(ls -1 *.sh 2>/dev/null | grep -vE '^(pack|submit|dev)\.sh$' | head -n1 || true)"
+    candidate="$(ls -1 *.sh 2>/dev/null | grep -vE '^(submit|dev)\.sh$' | head -n1 || true)"
     [ -n "$candidate" ] || die "run.sh not found"
     mv "$candidate" run.sh
 }
@@ -482,7 +482,6 @@ penv_clean() {
         gdb.py \
         attach.sh \
         dev.sh \
-        pack.sh \
         submit.sh \
         upload.py \
         solve.py \
@@ -548,6 +547,7 @@ penv_init_stack() {
     binary="$(detect_binary)"
 
     cp -p "$SCRIPT_DIR/stack/stack.Dockerfile" stack.Dockerfile
+    cp -p "$SCRIPT_DIR/stack/Makefile" Makefile
     cp -p "$SCRIPT_DIR/stack/exploit.py" exploit.py
     chmod +x exploit.py
 
@@ -591,6 +591,7 @@ penv_init_heap() {
     binary="$(detect_binary)"
 
     cp -p "$SCRIPT_DIR/heap/heap.Dockerfile" heap.Dockerfile
+    cp -p "$SCRIPT_DIR/heap/Makefile" Makefile
     cp -p "$SCRIPT_DIR/heap/gdb.py" gdb.py
     cp -p "$SCRIPT_DIR/heap/attach.sh" attach.sh
     cp -p "$SCRIPT_DIR/heap/exploit.py" exploit.py
@@ -645,11 +646,11 @@ penv_init_kernel() {
     extract_vmlinux
 
     cp -p "$SCRIPT_DIR/kernel/kernel.Dockerfile" kernel.Dockerfile
+    cp -p "$SCRIPT_DIR/kernel/Makefile" Makefile
     cp -p "$SCRIPT_DIR/kernel/gdb.py" gdb.py
-    cp -p "$SCRIPT_DIR/kernel/pack.sh" pack.sh
     cp -p "$SCRIPT_DIR/kernel/submit.sh" submit.sh
     cp -p "$SCRIPT_DIR/kernel/upload.py" upload.py
-    chmod +x pack.sh submit.sh upload.py
+    chmod +x submit.sh upload.py
     if [ ! -f .gitignore ]; then
         cp -p "$SCRIPT_DIR/kernel/.gitignore" .gitignore
     fi
