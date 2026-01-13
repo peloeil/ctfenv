@@ -54,7 +54,8 @@ void *find_target_from_heap(void *const addr_start, void *const target, const ui
     if (aar32 != NULL) {
         for (addr = (uint64_t)addr_start;; addr += 8) {
             if ((addr & 0xffff) == 0) {
-                printf("[ ] searching %p...\n", (void *)addr);
+                printf("[ ]   searching %p...\n", (void *)addr);
+
             }
             if (found_target((void *)addr, target, len, aar32, NULL)) {
                 printf("[+] found target at %p\n", (void *)addr);
@@ -65,7 +66,7 @@ void *find_target_from_heap(void *const addr_start, void *const target, const ui
     if (aar64 != NULL) {
         for (addr = (uint64_t)addr_start;; addr += 8) {
             if ((addr & 0xffff) == 0) {
-                printf("[ ] searching %p...\n", (void *)addr);
+                printf("[ ]   searching %p...\n", (void *)addr);
             }
             if (found_target((void *)addr, target, len, NULL, aar64)) {
                 printf("[+] found target at %p\n", (void *)addr);
