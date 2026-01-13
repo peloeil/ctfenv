@@ -80,7 +80,7 @@ void *find_target_from_heap(void *const addr_start, void *const target, const ui
 void *find_comm(void *const addr_start, uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
     char name[] = "maimai";
     assert(sizeof(name) <= 16);
-    if (prctl(PR_SET_NAME, name) != -1) {
+    if (prctl(PR_SET_NAME, name) == -1) {
         fatal("prctl");
     }
     printf("[ ] start searching comm from %p\n", addr_start);
