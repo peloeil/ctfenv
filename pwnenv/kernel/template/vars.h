@@ -1,6 +1,9 @@
 #ifndef __KPWN_VARS_H
 #define __KPWN_VARS_H
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <sched.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -19,8 +22,8 @@
 #define DUMMY_VALUE (0xdddddddddddddddd)
 #define default_kbase (0xffffffff81000000)
 #define kbase_offset (kbase - default_kbase)
-GLOBAL uint64_t user_cs, user_ss, user_rsp, user_rflags;
 GLOBAL cpu_set_t t1_cpu, t2_cpu;
+GLOBAL uint64_t user_cs, user_ss, user_rsp, user_rflags;
 GLOBAL uint64_t kbase INIT(default_kbase);
 GLOBAL uint64_t kheap INIT(0);
 
