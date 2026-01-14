@@ -1,5 +1,7 @@
 #include <assert.h>
+#define prctl_mm_map prctl_mm_map_conflict
 #include <linux/prctl.h>
+#undef prctl_mm_map
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
