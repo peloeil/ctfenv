@@ -16,11 +16,11 @@ static bool found_target(void *const addr, void *const target, const uint64_t le
             uint32_t actual;
             uint32_t expect;
             if (offset + 4 < len) {
-                actual = aar32(addr);
+                actual = aar32(addr + offset);
                 expect = *(uint32_t *)(target + offset);
             } else {
                 uint64_t rest = len - offset;
-                actual = aar32(addr);
+                actual = aar32(addr + offset);
                 expect = (*(uint32_t *)(target + offset)) & ((1 << (8 * rest)) - 1);
             }
             if (actual != expect) {
