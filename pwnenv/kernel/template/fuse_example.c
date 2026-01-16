@@ -54,15 +54,10 @@ static struct fuse_operations fops_example = {
 
 bool fuse_done = false;
 void *fuse_thread_example(void *arg) {
-    if (mkdir("/tmp/test", 0777)) {
-        fatal("mkdir");
-    }
+    CHECK_NZ(mkdir("/tmp/test", 0777));
 
     struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
-    struct fuse_chan *chan;
-    if (!(chan = fuse_mount("/tmp/test", &args))) {
-        fatal("fuse_mount");
-    }
+    struct fuse_chan *chan = CHECK_NULL(fuse_mount("/tmp/test", &args));
 
     struct fuse *fuse;
     if (!(fuse = fuse_new(chan, &args, &fops_example, sizeof(fops_example), NULL))) {
@@ -70,9 +65,7 @@ void *fuse_thread_example(void *arg) {
         fatal("fuse_new");
     }
 
-    if (sched_setaffinity(0, sizeof(cpu_set_t), &t1_cpu) != 0) {
-        fatal("sched_setaffinity");
-    }
+    CHECK_NZ(sched_setaffinity(0, sizeof(cpu_set_t), &t1_cpu));
 
     fuse_set_signal_handlers(fuse_get_session(fuse));
     fuse_done = true;

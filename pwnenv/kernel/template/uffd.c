@@ -17,7 +17,7 @@ void *fault_handler_thread_example(void *arg) {
 
     char *const dummy_page =
         mmap(NULL, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (dummy_page == MAP_FAILED) {
+    if (unlikely(dummy_page == MAP_FAILED)) {
         fatal("mmap(dummy)");
     }
 
@@ -25,19 +25,19 @@ void *fault_handler_thread_example(void *arg) {
     pollfd.fd = uffd;
     pollfd.events = POLLIN;
     while (poll(&pollfd, 1, -1) > 0) {
-        if (pollfd.revents & POLLERR || pollfd.revents & POLLHUP) {
+        if (unlikely(pollfd.revents & POLLERR || pollfd.revents & POLLHUP)) {
             fatal("poll");
         }
 
         // ページフォルト待機
         static struct uffd_msg msg;
-        if (read(uffd, &msg, sizeof(msg)) <= 0) {
+        if (unlikely(read(uffd, &msg, sizeof(msg)) <= 0)) {
             fatal("read(uffd)");
         }
         assert(msg.event == UFFD_EVENT_PAGEFAULT);
         puts("[ ] page fault occurs");
-        printf("[ ]   uffd: flag=%p\n", (void *)msg.arg.pagefault.flags);
-        printf("[ ]   uffd: addr=%p\n", (void *)msg.arg.pagefault.address);
+        printf("      uffd: flag=0x%llx\n", msg.arg.pagefault.flags);
+        printf("      uffd: addr=0x%llx\n", msg.arg.pagefault.address);
 
         // 要求されたページとして返すデータを設定
         static int fault_cnt = 0;
@@ -52,9 +52,7 @@ void *fault_handler_thread_example(void *arg) {
         copy.len = 0x1000;
         copy.mode = 0;
         copy.copy = 0;
-        if (ioctl(uffd, UFFDIO_COPY, &copy) == -1) {
-            fatal("ioctl(UFFDIO_COPY)");
-        }
+        CHECK(ioctl(uffd, UFFDIO_COPY, &copy));
     }
 
     return NULL;
@@ -62,31 +60,22 @@ void *fault_handler_thread_example(void *arg) {
 
 void register_uffd(void *(*handler)(void *), void *const addr, const uint64_t len) {
     // userfaultfd の作成
-    const int64_t uffd = syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK);
-    if (uffd == -1) {
-        fatal("userfaultfd");
-    }
+    const int64_t uffd = CHECK(syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK));
 
     // api の設定
     struct uffdio_api uffdio_api;
     uffdio_api.api = UFFD_API;
     uffdio_api.features = 0;
-    if (ioctl(uffd, UFFDIO_API, &uffdio_api) == -1) {
-        fatal("ioctl(UFFDIO_API)");
-    }
+    CHECK(ioctl(uffd, UFFDIO_API, &uffdio_api));
 
     // ページを userfaultfd に登録
     struct uffdio_register uffdio_register;
     uffdio_register.range.start = (uint64_t)addr;
     uffdio_register.range.len = len;
     uffdio_register.mode = UFFDIO_REGISTER_MODE_MISSING;
-    if (ioctl(uffd, UFFDIO_REGISTER, &uffdio_register) == -1) {
-        fatal("UFFDIO_REGISTER");
-    }
+    CHECK(ioctl(uffd, UFFDIO_REGISTER, &uffdio_register));
 
     // ページフォルトを処理するスレッドを作成
     pthread_t th;
-    if (pthread_create(&th, NULL, handler, (void *)uffd)) {
-        fatal("pthread_create");
-    }
+    CHECK_NZ(pthread_create(&th, NULL, handler, (void *)uffd));
 }
