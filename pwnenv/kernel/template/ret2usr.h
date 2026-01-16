@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void win(void);
+void spawn_shell(void);
 void save_state(void);
 void restore_state(void);
 void escalate_privilege(void);

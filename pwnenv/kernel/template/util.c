@@ -19,7 +19,7 @@ void dump_buffer(void *const buffer, const uint64_t row) {
     }
 }
 
-bool valid_kbase(void) {
+bool is_valid_kbase(void) {
     if (!kaslr && kbase == default_kbase) {
         return true;
     }
