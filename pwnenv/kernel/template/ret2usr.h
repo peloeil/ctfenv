@@ -5,8 +5,12 @@
 
 void spawn_shell(void);
 void save_state(void);
-void restore_state(void);
-void escalate_privilege(void);
 void krop(uint64_t *ptr);
+
+// requires nosmep
+void restore_state(void);
+
+// requires nosmep
+void escalate_privilege(void);
 
 #endif  // __KPWN_RET2USR_H

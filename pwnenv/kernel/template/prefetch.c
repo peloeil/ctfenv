@@ -27,7 +27,6 @@ static uint64_t measure_prefetch_time(const uint64_t addr) {
     return ret;
 }
 
-// 統計的に最も平均から離れているインデックスを探すヘルパー関数
 static uint64_t find_outlier_index(const uint64_t *times, uint64_t count) {
     if (count == 0) {
         return 0;

