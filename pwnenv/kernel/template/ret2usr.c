@@ -19,13 +19,15 @@ void spawn_shell(void) {
 
 void save_state(void) {
     asm volatile(
-        ".intel_syntax noprefix;"
-        "mov user_cs, cs;"
-        "mov user_ss, ss;"
-        "mov user_rsp, rsp;"
-        "pushf;"
-        "pop user_rflags;"
-        ".att_syntax;");
+        "mov %0, cs;"
+        "mov %1, ss;"
+        "mov %2, rsp;"
+        "pushfq;"
+        "pop %3;"
+        ".att_syntax;"
+        : "=r"(user_cs), "=r"(user_ss), "=r"(user_rsp), "=r"(user_rflags)
+        :
+        : "memory");
 }
 
 // nosmep
