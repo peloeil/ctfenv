@@ -278,7 +278,7 @@ ensure_run_script() {
     if [ -f run.sh ]; then
         return 0
     fi
-    candidate="$(ls -1 *.sh 2>/dev/null | grep -vE '^(submit|dev)\.sh$' | head -n1 || true)"
+    candidate="$(ls -1 *.sh 2>/dev/null | grep -v 'dev.sh' | head -n1 || true)"
     [ -n "$candidate" ] || die "run.sh not found"
     mv "$candidate" run.sh
 }
@@ -484,7 +484,6 @@ penv_clean() {
         gdb.py \
         attach.sh \
         dev.sh \
-        submit.sh \
         upload.py \
         solve.py \
         rootfs_dev.cpio \
@@ -650,9 +649,8 @@ penv_init_kernel() {
     cp -p "$SCRIPT_DIR/kernel/kernel.Dockerfile" kernel.Dockerfile
     cp -p "$SCRIPT_DIR/kernel/Makefile" Makefile
     cp -p "$SCRIPT_DIR/kernel/gdb.py" gdb.py
-    cp -p "$SCRIPT_DIR/kernel/submit.sh" submit.sh
     cp -p "$SCRIPT_DIR/kernel/upload.py" upload.py
-    chmod +x submit.sh upload.py
+    chmod +x upload.py
     if [ ! -f .gitignore ]; then
         cp -p "$SCRIPT_DIR/kernel/.gitignore" .gitignore
     fi
