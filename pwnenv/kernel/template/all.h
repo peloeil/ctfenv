@@ -3,6 +3,7 @@
 
 #include "aar.h"
 #include "aaw.h"
+#include "prefetch.h"
 #include "ret2usr.h"
 #include "util.h"
 #include "vars.h"

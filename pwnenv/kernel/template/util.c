@@ -29,3 +29,27 @@ bool is_valid_kbase(void) {
     }
     return false;
 }
+
+uint64_t argmin_u64(const uint64_t *const array, const uint64_t len) {
+    uint64_t index = 0;
+    uint64_t min = UINT64_MAX;
+    for (uint64_t i = 0; i < len; i++) {
+        if (min > array[i]) {
+            min = array[i];
+            index = i;
+        }
+    }
+    return index;
+}
+
+uint64_t argmax_u64(const uint64_t *const array, const uint64_t len) {
+    uint64_t index = 0;
+    uint64_t max = 0;
+    for (uint64_t i = 0; i < len; i++) {
+        if (max < array[i]) {
+            max = array[i];
+            index = i;
+        }
+    }
+    return index;
+}

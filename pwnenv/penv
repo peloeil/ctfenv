@@ -134,6 +134,8 @@ write_pwnenv_snippet() {
         fi
         echo "    stdin_open: true"
         echo "    tty: true"
+        echo "    devices:"
+        echo "      - /dev/kvm:/dev/kvm"
         echo "    volumes:"
         echo "      - type: bind"
         echo "        source: ./tmux.conf"

@@ -7,6 +7,9 @@
 void fatal(const char *str);
 void dump_buffer(void *const buffer, const uint64_t row);
 bool is_valid_kbase(void);
+uint64_t argmin_u64(const uint64_t *const array, const uint64_t len);
+uint64_t argmax_u64(const uint64_t *const array, const uint64_t len);
+
 
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
