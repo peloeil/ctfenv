@@ -44,6 +44,7 @@ __attribute__((noreturn)) static inline void fatal_at(const char *file, int line
 
 #define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a < b ? b : a)
+#define FABS(a) (a > 0 ? a : -a)
 #define DECLARE_REG(reg) register uint64_t reg##_val asm(#reg)
 
 #endif  //__KPWN_UTIL_H

