@@ -19,6 +19,7 @@ void spawn_shell(void) {
 
 void save_state(void) {
     asm volatile(
+        ".intel_syntax noprefix;"
         "mov %0, cs;"
         "mov %1, ss;"
         "mov %2, rsp;"
