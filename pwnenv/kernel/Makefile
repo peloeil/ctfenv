@@ -1,6 +1,7 @@
 EXCLUDE_SRCS ?= ./src/template/fuse_example.c
 SRCS := $(filter-out $(EXCLUDE_SRCS), $(shell find ./src -name "*.c"))
 LIBS ?=
+ROOTFS_EXT := $(shell if [ -f rootfs.cpio ]; then echo ""; else for e in ext2 ext3 ext4; do [ -f rootfs.$$e ] && echo $$e && exit; done; fi)
 
 ifneq ($(strip $(LIBS)),)
 	CC := gcc
@@ -21,10 +22,19 @@ enter:
 	fi
 	docker compose exec pwnenv /bin/fish
 
-pack:
+compile:
 	@echo $(MSG)
 	$(CC) $(CFLAGS) $(SRCS) -o rootdir/exploit $(LIBS)
+
+pack: compile
+ifneq ($(strip $(ROOTFS_EXT)),)
+	@command -v mke2fs >/dev/null 2>&1 || { echo "mke2fs not found"; exit 1; }
+	@size=$$(stat -c%s rootfs.$(ROOTFS_EXT)); \
+		truncate -s "$$size" rootfs_dev.$(ROOTFS_EXT); \
+		mke2fs -q -t $(ROOTFS_EXT) -d rootdir -F rootfs_dev.$(ROOTFS_EXT)
+else
 	cd rootdir; find . -print0 | cpio --create --format=newc --null --owner=root > ../rootfs_dev.cpio; cd ..
+endif
 
 run: pack
 	./dev.sh

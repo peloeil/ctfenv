@@ -1,4 +1,7 @@
 vmlinux
+exploit
 rootdir/
 rootfs_dev.cpio
-*.s
+rootfs_dev.ext2
+rootfs_dev.ext3
+rootfs_dev.ext4

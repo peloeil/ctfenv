@@ -15,7 +15,7 @@ CTF の pwn 用の個人的な docker 環境
 - kernel 問題の場合
     - `bzImage`
     - startup script
-    - cpio file
+    - cpio file or ext2/3/4 file
     - `vmlinux` (optional)
     - `Dockerfile` (optional)
     - `compose.yaml` (optional)
@@ -33,6 +33,9 @@ CTF の pwn 用の個人的な docker 環境
     - `pwninit`
 - kernel
     - `extract-vmlinux`
+- kernel (ext2/3/4)
+    - `debugfs`
+    - `mke2fs`
 - optional（cpio が圧縮されている場合）
     - `gzip`, `xz`, `lz4`
 
@@ -44,7 +47,8 @@ CTF の pwn 用の個人的な docker 環境
     - `./` を `/home/pwn/` にマウントする
     - `Makefile` を用意する
         - `enter`: docker 環境を立ち上げて入る
-        - `pack`: exploit スクリプトをコンパイルして cpio にまとめる(kernel 問題のみ)
+        - `compile`: exploit スクリプトをコンパイルする(kernel 問題のみ)
+        - `pack`: exploit バイナリを rootfs にまとめる(kernel 問題のみ)
         - `run`: stack, heap 問題では exploit.py を実行する。kernel 問題では pack して dev.sh を実行する
         - `submit`: サイズを最適化して pack を行った後、upload.py を実行する(kernel 問題のみ)
     - bare
@@ -70,12 +74,12 @@ CTF の pwn 用の個人的な docker 環境
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる
     - kernel
         - `vmlinux` がない場合は `extract-vmlinux` で `vmlinux` を抽出する
-        - cpio を `rootdir` ディレクトリに展開する
+        - cpio / ext を `rootdir` ディレクトリに展開する
         - `src/exploit.c`, `src/template/`, `gdb.py`, `dev.sh`, `pack.sh`, `submit.sh`, `upload.py` を用意する
         - startup script のファイル名を `run.sh` に統一する
-        - cpio のファイル名を `rootfs.cpio` に統一する
+        - rootfs のファイル名を `rootfs.cpio` または `rootfs.ext[234]` に統一する
             - `run.sh` 内のファイル名も変更する
-        - `.gitignore` を用意し、`vmlinux`, `rootdir/`, `rootfs_dev.cpio` を除外する
+        - `.gitignore` を用意し、`vmlinux`, `exploit`, `rootdir/`, `rootfs_dev.cpio`, `rootfs_dev.ext[234]` を除外する
         - compose file があれば、そのファイル名を `compose.yaml` に統一する
         - `compose.yaml` があれば、`compose.yaml` に問題用コンテナと exploit 用コンテナを一緒に起動する設定を追加する
             - exploit 用コンテナでは `nc <problem-service-name> <port-number>` で問題用コンテナに接続できる

@@ -17,6 +17,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     curl \
     git \
     cpio \
+    e2fsprogs \
     upx
 
 ## non-root user

@@ -325,6 +325,22 @@ detect_cpio_file() {
     printf '%s\n' "${f#./}"
 }
 
+detect_ext_file() {
+    local f
+    local ext
+
+    for ext in ext2 ext3 ext4; do
+        if [ -f "rootfs.${ext}" ]; then
+            printf '%s\n' "rootfs.${ext}"
+            return 0
+        fi
+    done
+
+    f="$(find . -maxdepth 1 -type f \( -name '*.ext2' -o -name '*.ext3' -o -name '*.ext4' \) -print | head -n1 || true)"
+    [ -n "$f" ] || return 1
+    printf '%s\n' "${f#./}"
+}
+
 extract_cpio_to_rootdir() {
     local cpio_file="$1"
 
@@ -347,6 +363,18 @@ extract_cpio_to_rootdir() {
         (cd rootdir && cpio -idv <"../$cpio_file") || true
         ;;
     esac
+}
+
+extract_ext_to_rootdir() {
+    local ext_file="$1"
+
+    if [ -d rootdir ] && [ -n "$(ls -A rootdir 2>/dev/null)" ]; then
+        return 0
+    fi
+
+    command -v debugfs >/dev/null 2>&1 || die "debugfs not found"
+    mkdir -p rootdir
+    debugfs -R "rdump / rootdir" "$ext_file" || true
 }
 
 ensure_kernel_exploit_c() {
@@ -409,9 +437,9 @@ penv_info() {
 
 # penv check
 penv_check() {
-    local binary cpio_file mode
+    local binary cpio_file ext_file mode
 
-    if [ -f bzImage ] || detect_cpio_file >/dev/null 2>&1; then
+    if [ -f bzImage ] || detect_cpio_file >/dev/null 2>&1 || detect_ext_file >/dev/null 2>&1; then
         mode="kernel"
     elif [ -f libc.so.6 ]; then
         if [ -f Dockerfile ]; then
@@ -441,6 +469,11 @@ penv_check() {
     else
         printf 'cpio: missing\n'
     fi
+    if ext_file="$(detect_ext_file 2>/dev/null)"; then
+        printf 'ext: %s\n' "$ext_file"
+    else
+        printf 'ext: missing\n'
+    fi
 
     printf 'deps:\n'
     for d in bash awk sed grep find file cpio docker pwninit extract-vmlinux; do
@@ -460,6 +493,13 @@ penv_check() {
             printf '  %s (optional): ok\n' "$d"
         else
             printf '  %s (optional): missing\n' "$d"
+        fi
+    done
+    for d in debugfs mke2fs; do
+        if command -v "$d" >/dev/null 2>&1; then
+            printf '  %s (ext2/3/4): ok\n' "$d"
+        else
+            printf '  %s (ext2/3/4): missing\n' "$d"
         fi
     done
 }
@@ -487,6 +527,9 @@ penv_clean() {
         upload.py \
         solve.py \
         rootfs_dev.cpio \
+        rootfs_dev.ext2 \
+        rootfs_dev.ext3 \
+        rootfs_dev.ext4 \
         *_patched
 }
 
@@ -630,20 +673,34 @@ penv_init_heap() {
 
 penv_init_kernel() {
     local service_name snippet
-    local cpio_file
+    local cpio_file ext_file ext_type rootfs_file rootfs_kind
 
     ensure_run_script
-    make_dev_sh
 
     cpio_file="$(detect_cpio_file || true)"
     if [ -n "$cpio_file" ]; then
-        if [ "$cpio_file" != "rootfs.cpio" ]; then
-            mv "$cpio_file" rootfs.cpio
-            sed -i "s/$(escape_sed "$cpio_file")/rootfs.cpio/g" run.sh
+        rootfs_kind="cpio"
+        rootfs_file="rootfs.cpio"
+        if [ "$cpio_file" != "$rootfs_file" ]; then
+            mv "$cpio_file" "$rootfs_file"
+            sed -i "s/$(escape_sed "$cpio_file")/$(escape_sed "$rootfs_file")/g" run.sh
         fi
-        extract_cpio_to_rootdir rootfs.cpio
+        extract_cpio_to_rootdir "$rootfs_file"
+    else
+        ext_file="$(detect_ext_file || true)"
+        if [ -n "$ext_file" ]; then
+            ext_type="${ext_file##*.}"
+            rootfs_kind="$ext_type"
+            rootfs_file="rootfs.${ext_type}"
+            if [ "$ext_file" != "$rootfs_file" ]; then
+                mv "$ext_file" "$rootfs_file"
+                sed -i "s/$(escape_sed "$ext_file")/$(escape_sed "$rootfs_file")/g" run.sh
+            fi
+            extract_ext_to_rootdir "$rootfs_file"
+        fi
     fi
 
+    make_dev_sh
     extract_vmlinux
 
     cp -p "$SCRIPT_DIR/kernel/kernel.Dockerfile" kernel.Dockerfile
@@ -656,7 +713,13 @@ penv_init_kernel() {
     fi
 
     ensure_kernel_exploit_c
-    touch rootfs_dev.cpio
+    if [ "$rootfs_kind" = "cpio" ]; then
+        touch rootfs_dev.cpio
+    elif [ -n "$rootfs_kind" ]; then
+        if [ -f "$rootfs_file" ] && [ ! -f "rootfs_dev.${rootfs_kind}" ]; then
+            cp -p "$rootfs_file" "rootfs_dev.${rootfs_kind}"
+        fi
+    fi
     ensure_tmux_conf
 
     if normalize_compose_file; then
