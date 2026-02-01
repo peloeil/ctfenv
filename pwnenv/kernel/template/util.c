@@ -80,7 +80,9 @@ void *allocate_private_page(void *addr) {
 }
 
 void *allocate_fd_page(void *addr, int32_t fd) {
-    return _CHECK_IMPL(mmap(addr, 0x1000, PROT_READ | PROT_WRITE,
-                            MAP_SHARED | MAP_POPULATE | MAP_FIXED_NOREPLACE, fd, 0),
-                       == MAP_FAILED);
+    int32_t flags = MAP_POPULATE | MAP_SHARED;
+    if (addr != NULL) {
+        flags |= MAP_FIXED_NOREPLACE;
+    }
+    return _CHECK_IMPL(mmap(addr, 0x1000, PROT_READ | PROT_WRITE, flags, fd, 0), == MAP_FAILED);
 }
