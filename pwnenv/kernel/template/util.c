@@ -2,11 +2,13 @@
 
 #include "util.h"
 
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "vars.h"
 
@@ -85,4 +87,48 @@ void *allocate_fd_page(void *addr, int32_t fd) {
         flags |= MAP_FIXED_NOREPLACE;
     }
     return _CHECK_IMPL(mmap(addr, 0x1000, PROT_READ | PROT_WRITE, flags, fd, 0), == MAP_FAILED);
+}
+
+static void sig_handler(int32_t s) {
+    return;
+}
+
+void write_cpu_entry_area(char *payload) {
+    if (CHECK(fork()) > 0) {
+        sleep(1);
+        return;
+    }
+    struct sigaction sa = {0};
+
+    sa.sa_handler = sig_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    CHECK(sigaction(SIGTRAP, &sa, NULL));
+    CHECK(sigaction(SIGSEGV, &sa, NULL));
+    setsid();
+    asm volatile(
+        ".intel_syntax noprefix;"
+        "mov rsp, %0;"
+        "pop r15;"
+        "pop r14;"
+        "pop r13;"
+        "pop r12;"
+        "pop rbp;"
+        "pop rbx;"
+        "pop r11;"
+        "pop r10;"
+        "pop r9;"
+        "pop r8;"
+        "pop rax;"
+        "pop rcx;"
+        "pop rdx;"
+        "pop rsi;"
+        "pop rdi;"
+        "int3;"
+        ".att_syntax prefix;"
+        :
+        : "r"(payload)
+        : "memory");
+    __builtin_unreachable();
 }
