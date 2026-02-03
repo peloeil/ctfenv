@@ -94,6 +94,7 @@ static void sig_handler(int32_t s) {
 }
 
 void write_cpu_entry_area(char *payload) {
+    puts("[ ] writing cpu_entry_area");
     if (CHECK(fork()) > 0) {
         sleep(1);
         return;
