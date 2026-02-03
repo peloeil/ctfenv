@@ -341,8 +341,30 @@ detect_ext_file() {
     printf '%s\n' "${f#./}"
 }
 
+detect_cpio_compression() {
+    local cpio_file="$1"
+    local mime
+
+    mime="$(file -b --mime-type "$cpio_file" 2>/dev/null || true)"
+    case "$mime" in
+    application/gzip)
+        printf '%s\n' "gz"
+        ;;
+    application/x-xz)
+        printf '%s\n' "xz"
+        ;;
+    application/x-lz4)
+        printf '%s\n' "lz4"
+        ;;
+    *)
+        return 1
+        ;;
+    esac
+}
+
 extract_cpio_to_rootdir() {
     local cpio_file="$1"
+    local compression=""
 
     if [ -d rootdir ] && [ -n "$(ls -A rootdir 2>/dev/null)" ]; then
         return 0
@@ -351,12 +373,27 @@ extract_cpio_to_rootdir() {
     mkdir -p rootdir
     case "$cpio_file" in
     *.gz)
-        gzip -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        compression="gz"
         ;;
     *.xz)
-        xz -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        compression="xz"
         ;;
     *.lz4)
+        compression="lz4"
+        ;;
+    *)
+        compression="$(detect_cpio_compression "$cpio_file" || true)"
+        ;;
+    esac
+
+    case "$compression" in
+    gz)
+        gzip -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        ;;
+    xz)
+        xz -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
+        ;;
+    lz4)
         lz4 -dc "$cpio_file" | (cd rootdir && cpio -idv) || true
         ;;
     *)
