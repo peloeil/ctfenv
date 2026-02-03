@@ -91,6 +91,7 @@ void *find_comm(void *const addr_start, uint32_t (*aar32)(void *), uint64_t (*aa
 }
 
 void *comm_to_addr_cred(void *addr_comm, uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
+    puts("[ ] locating current->cred from current->comm");
     if (unlikely(aar32 == NULL && aar64 == NULL)) {
         puts("[-] please implement aar function");
         return NULL;

