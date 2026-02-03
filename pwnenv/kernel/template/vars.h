@@ -31,6 +31,7 @@ GLOBAL uint64_t kheap INIT(0);
 #define CONFIG_PHYSICAL_START (0x1000000)
 #define CONFIG_PHYSICAL_ALIGN (0x200000)
 #define CONFIG_RANDOMIZE_BASE_MAX_OFFSET (0x40000000)
+#define PUD_SIZE (0x40000000)
 
 // addresses
 #define addr_prepare_kernel_cred (DUMMY_VALUE + kbase_offset)
