@@ -22,6 +22,7 @@
 #define DUMMY_VALUE (0xdddddddddddddddd)
 #define default_kbase (0xffffffff81000000)
 #define kbase_offset (kbase - default_kbase)
+#define PAGE_SIZE (0x1000)
 GLOBAL uint64_t user_cs, user_ss, user_rsp, user_rflags;
 GLOBAL uint64_t kbase INIT(default_kbase);
 GLOBAL uint64_t kheap INIT(0);

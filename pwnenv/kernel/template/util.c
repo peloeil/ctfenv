@@ -104,3 +104,12 @@ void write_cpu_entry_area(char *payload) {
         : "memory");
     __builtin_unreachable();
 }
+
+void stop_execution(char *str) {
+    char *msg = "[ ] waiting for input...";
+    if (str != NULL) {
+        msg = str;
+    }
+    puts(msg);
+    getchar();
+}
