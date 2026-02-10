@@ -13,10 +13,8 @@ void dump_buffer(void *const buffer, const uint64_t row);
 bool is_valid_kbase(void);
 uint64_t argmin_u64(const uint64_t *const array, const uint64_t len);
 uint64_t argmax_u64(const uint64_t *const array, const uint64_t len);
-uint64_t addr_to_page(uint64_t addr);
-uint64_t paddr_to_pte_entry(uint64_t paddr);
-void *allocate_private_page(void *addr);
-void *allocate_fd_page(void *addr, int32_t fd);
+void write_cpu_entry_area(char *payload);
+void stop_execution(char *str);
 
 __attribute__((noreturn)) static inline void fatal_at(const char *file, int line,
                                                       const char *expr) {

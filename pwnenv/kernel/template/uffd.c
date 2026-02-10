@@ -59,7 +59,7 @@ void *fault_handler_thread_example(void *arg) {
 }
 
 void register_uffd(void *(*handler)(void *), void *const addr, const uint64_t len) {
-    printf("[ ] registering userfaultfd handler to [%p, %p)", addr, addr + len);
+    printf("[ ] registering userfaultfd handler to [%p, %p)\n", addr, addr + len);
     // userfaultfd の作成
     const int64_t uffd = CHECK(syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK));
 
