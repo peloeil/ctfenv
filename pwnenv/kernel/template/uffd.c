@@ -36,8 +36,8 @@ void *fault_handler_thread_example(void *arg) {
         }
         assert(msg.event == UFFD_EVENT_PAGEFAULT);
         puts("[ ] page fault occurs");
-        printf("      uffd: flag=0x%llx\n", msg.arg.pagefault.flags);
-        printf("      uffd: addr=0x%llx\n", msg.arg.pagefault.address);
+        printf("      uffd: flag = %#llx\n", msg.arg.pagefault.flags);
+        printf("      uffd: addr = %#llx\n", msg.arg.pagefault.address);
 
         // 要求されたページとして返すデータを設定
         static int fault_cnt = 0;

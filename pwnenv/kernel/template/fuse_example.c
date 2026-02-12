@@ -36,8 +36,8 @@ int32_t read_callback_example(const char *path, char *buffer, uint64_t size, off
                               struct fuse_file_info *fi) {
     puts("[ ] read_callback_example");
     printf("      path  : %s\n", path);
-    printf("      size  : 0x%lx\n", size);
-    printf("      offset: 0x%lx\n", offset);
+    printf("      size  : %#lx\n", size);
+    printf("      offset: %#lx\n", offset);
 
     if (strcmp(path, "/pwn") == 0) {
         memcpy(buffer, "Hello, World!", 14);
