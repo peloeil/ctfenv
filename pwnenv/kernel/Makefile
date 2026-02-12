@@ -1,5 +1,5 @@
-EXCLUDE_SRCS ?= ./src/template/fuse_example.c
-SRCS := $(filter-out $(EXCLUDE_SRCS), $(shell find ./src -name "*.c"))
+EXCLUDE_SRCS ?= ./src/template/fuse_example.c ./template/fuse_example.c
+SRCS := $(filter-out $(EXCLUDE_SRCS), $(shell if [ -d ./src ]; then find ./src -name "*.c"; else find . -name "*.c"; fi))
 LIBS ?=
 ROOTFS_EXT := $(shell if [ -f rootfs.cpio ]; then echo ""; else for e in ext2 ext3 ext4; do [ -f rootfs.$$e ] && echo $$e && exit; done; fi)
 
@@ -13,7 +13,10 @@ else
 	MSG := "Compiling with musl-gcc (Size optimized)..."
 endif
 
-.PHONY: enter pack run submit
+ZIG_GLOBAL_CACHE_DIR ?= .zig-cache/global
+ZIG_LOCAL_CACHE_DIR ?= .zig-cache/local
+
+.PHONY: enter pack pack-rootfs pack-zig run run-zig submit compile compile-zig
 
 enter:
 	@if [ -z "$$(docker compose ps --quiet pwnenv)" ]; then \
@@ -24,9 +27,20 @@ enter:
 
 compile:
 	@echo $(MSG)
+	@mkdir -p rootdir
 	$(CC) $(CFLAGS) $(SRCS) -o rootdir/exploit $(LIBS)
 
-pack: compile
+compile-zig:
+	@echo "Compiling with Zig..."
+	@mkdir -p rootdir $(ZIG_GLOBAL_CACHE_DIR) $(ZIG_LOCAL_CACHE_DIR)
+	ZIG_GLOBAL_CACHE_DIR=$(ZIG_GLOBAL_CACHE_DIR) ZIG_LOCAL_CACHE_DIR=$(ZIG_LOCAL_CACHE_DIR) \
+		zig build-exe exploit.zig -O ReleaseSmall -target x86_64-linux-musl -static -lc -femit-bin=rootdir/exploit
+
+pack: compile pack-rootfs
+
+pack-zig: compile-zig pack-rootfs
+
+pack-rootfs:
 ifneq ($(strip $(ROOTFS_EXT)),)
 	@command -v mke2fs >/dev/null 2>&1 || { echo "mke2fs not found"; exit 1; }
 	@size=$$(stat -c%s rootfs.$(ROOTFS_EXT)); \
@@ -37,6 +51,9 @@ else
 endif
 
 run: pack
+	./dev.sh
+
+run-zig: pack-zig
 	./dev.sh
 
 # 圧縮するためのオプションで挙動が変わる可能性がある

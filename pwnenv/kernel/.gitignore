@@ -1,6 +1,7 @@
 vmlinux
 exploit
 rootdir/
+.zig-cache/
 rootfs_dev.cpio
 rootfs_dev.ext2
 rootfs_dev.ext3
