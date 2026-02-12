@@ -1,4 +1,4 @@
-EXCLUDE_SRCS ?= ./src/template/fuse_example.c
+EXCLUDE_SRCS ?= ./src/template/fuse_example.c ./src/template/pagejack_example.c
 SRCS := $(filter-out $(EXCLUDE_SRCS), $(shell find ./src -name "*.c"))
 LIBS ?=
 ROOTFS_EXT := $(shell if [ -f rootfs.cpio ]; then echo ""; else for e in ext2 ext3 ext4; do [ -f rootfs.$$e ] && echo $$e && exit; done; fi)
