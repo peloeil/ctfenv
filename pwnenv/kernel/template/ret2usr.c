@@ -29,10 +29,10 @@ void save_state(void) {
         : "=r"(user_cs), "=r"(user_ss), "=r"(user_rsp), "=r"(user_rflags)
         :
         : "memory");
-    printf("      user_cs     = %#016lx\n", user_cs);
-    printf("      user_rflags = %#016lx\n", user_rflags);
-    printf("      user_rsp    = %#016lx\n", user_rsp);
-    printf("      user_ss     = %#016lx\n", user_ss);
+    printf("      user_cs     = 0x%016lx\n", user_cs);
+    printf("      user_rflags = 0x%016lx\n", user_rflags);
+    printf("      user_rsp    = 0x%016lx\n", user_rsp);
+    printf("      user_ss     = 0x%016lx\n", user_ss);
 }
 
 void restore_state(void) {
