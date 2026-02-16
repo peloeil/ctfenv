@@ -21,7 +21,14 @@ void dump_buffer(void *const buffer, const uint64_t row) {
     uint64_t *ptr = buffer;
     printf("[ ] buffer dump from %p\n", ptr);
     for (uint64_t i = 0; i < row; i++) {
-        printf("      %p|+0x%03lx: 0x%016lx\n", &ptr[i], i * 8, ptr[i]);
+        uint8_t ascii[9] = {0};
+        *(uint64_t *)ascii = ptr[i];
+        for (uint64_t j = 0; j < 8; j++) {
+            if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
+                ascii[j] = '.';
+            }
+        }
+        printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", &ptr[i], i * 8, ptr[i], ascii);
     }
 }
 

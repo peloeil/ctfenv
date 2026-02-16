@@ -122,12 +122,26 @@ void dump_buffer_aar(void *addr_start, const uint64_t row, uint32_t (*aar32)(voi
             uint64_t val = 0;
             val |= aar32(addr_start + i * 8);
             val |= (uint64_t)aar32(addr_start + i * 8 + 4) << 32;
-            printf("      %p|+0x%03lx: 0x%016lx\n", addr_start + i * 8, i * 8, val);
+            uint8_t ascii[9] = {0};
+            *(uint64_t *)ascii = val;
+            for (uint64_t j = 0; j < 8; j++) {
+                if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
+                    ascii[j] = '.';
+                }
+            }
+            printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", addr_start + i * 8, i * 8, val, ascii);
         }
     } else if (aar64 != NULL) {
         for (uint64_t i = 0; i < row; i++) {
             uint64_t val = aar64(addr_start + i * 8);
-            printf("      %p|+0x%03lx: 0x%016lx\n", addr_start + i * 8, i * 8, val);
+            uint8_t ascii[9] = {0};
+            *(uint64_t *)ascii = val;
+            for (uint64_t j = 0; j < 8; j++) {
+                if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
+                    ascii[j] = '.';
+                }
+            }
+            printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", addr_start + i * 8, i * 8, val, ascii);
         }
     }
 }
