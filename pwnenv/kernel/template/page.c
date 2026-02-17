@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include "types.h"
 
 u64 align_to_page(const u64 addr) {
     return addr & ~0xfff;
@@ -48,9 +48,8 @@ u64 pte_to_phys_page(const u64 pte) {
     return pte & 0xffffffffff000;
 }
 
-u64 pt_index_to_vaddr(const u64 pgd_index, const u64 pud_index,
-                           const u64 pmd_index, const u64 pte_index,
-                           const u64 page_offset) {
+u64 pt_index_to_vaddr(const u64 pgd_index, const u64 pud_index, const u64 pmd_index,
+                      const u64 pte_index, const u64 page_offset) {
     return pgd_index_to_vpart(pgd_index) | pud_index_to_vpart(pud_index) |
            pmd_index_to_vpart(pmd_index) | pte_index_to_vpart(pte_index) | page_offset;
 }
