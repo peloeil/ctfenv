@@ -29,6 +29,8 @@ i32 getattr_callback_example(const char *path, struct stat *stbuf) {
 
 i32 open_callback_example(const char *path, struct fuse_file_info *fi) {
     puts("[ ] open_callback_example");
+    (void)path;
+    (void)fi;
     return 0;
 }
 
@@ -38,6 +40,7 @@ i32 read_callback_example(const char *path, char *buffer, u64 size, off_t offset
     printf("      path  : %s\n", path);
     printf("      size  : %#lx\n", size);
     printf("      offset: %#lx\n", offset);
+    (void)fi;
 
     if (strcmp(path, "/pwn") == 0) {
         memcpy(buffer, "Hello, World!", 14);
