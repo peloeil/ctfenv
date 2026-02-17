@@ -28,8 +28,7 @@ void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, u32),
     }
 }
 
-void overwrite_cred(void *const addr_cred, void (*aaw32)(void *, u32),
-                    void (*aaw64)(void *, u64)) {
+void overwrite_cred(void *const addr_cred, void (*aaw32)(void *, u32), void (*aaw64)(void *, u64)) {
     puts("[+] overwriting current->cred");
     if (unlikely(aaw32 == NULL && aaw64 == NULL)) {
         puts("[-] please implement aaw function");

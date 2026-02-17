@@ -33,7 +33,7 @@ i32 open_callback_example(const char *path, struct fuse_file_info *fi) {
 }
 
 i32 read_callback_example(const char *path, char *buffer, u64 size, off_t offset,
-                              struct fuse_file_info *fi) {
+                          struct fuse_file_info *fi) {
     puts("[ ] read_callback_example");
     printf("      path  : %s\n", path);
     printf("      size  : %#lx\n", size);

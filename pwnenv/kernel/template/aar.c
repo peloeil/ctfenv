@@ -9,8 +9,8 @@
 
 #include "util.h"
 
-static bool found_target(void *const addr, void *const target, const u64 len,
-                         u32 (*aar32)(void *), u64 (*aar64)(void *)) {
+static bool found_target(void *const addr, void *const target, const u64 len, u32 (*aar32)(void *),
+                         u64 (*aar64)(void *)) {
     if (likely(aar32 != NULL)) {
         for (u64 offset = 0; offset < len; offset += 4) {
             u32 actual;
@@ -109,8 +109,7 @@ void *comm_to_addr_cred(void *addr_comm, u32 (*aar32)(void *), u64 (*aar64)(void
     return (void *)addr_cred;
 }
 
-void dump_buffer_aar(void *addr_start, const u64 row, u32 (*aar32)(void *),
-                     u64 (*aar64)(void *)) {
+void dump_buffer_aar(void *addr_start, const u64 row, u32 (*aar32)(void *), u64 (*aar64)(void *)) {
     if (unlikely(aar32 == NULL && aar64 == NULL)) {
         puts("[-] please implement aar function");
         return;

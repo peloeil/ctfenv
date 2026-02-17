@@ -3,8 +3,7 @@
 
 #include "types.h"
 
-void overwrite_cred(void *const addr_cred, void (*aaw32)(void *, u32),
-                    void (*aaw64)(void *, u64));
+void overwrite_cred(void *const addr_cred, void (*aaw32)(void *, u32), void (*aaw64)(void *, u64));
 
 // requires `CONFIG_STATIC_USERMODEHELPER=n`
 void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, u32),
