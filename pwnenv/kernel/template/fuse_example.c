@@ -79,7 +79,10 @@ void *fuse_thread_example(void *arg) {
         fatal("fuse_new");
     }
 
-    CHECK(sched_setaffinity(0, sizeof(cpu_set_t), &t1_cpu));
+    cpu_set_t cpu;
+    CPU_ZERO(&cpu);
+    CPU_SET(0, &cpu);
+    CHECK(sched_setaffinity(0, sizeof(cpu_set_t), &cpu));
 
     fuse_set_signal_handlers(fuse_get_session(fuse));
     fuse_done = true;
