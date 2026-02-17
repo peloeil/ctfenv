@@ -43,10 +43,21 @@ i32 read_callback_example(const char *path, char *buffer, u64 size, off_t offset
     (void)fi;
 
     if (strcmp(path, "/pwn") == 0) {
-        memcpy(buffer, "Hello, World!", 14);
-        return size;
+        const u64 content_len = strlen(content);
+        if (offset < 0) {
+            return -EINVAL;
+        }
+        if ((u64)offset >= content_len) {
+            return 0;
+        }
+        u64 n = content_len - (u64)offset;
+        if (n > size) {
+            n = size;
+        }
+        memcpy(buffer, content + offset, n);
+        return (i32)n;
     }
-    return 0;
+    return -ENOENT;
 }
 
 static struct fuse_operations fops_example = {
