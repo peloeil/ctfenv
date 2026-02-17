@@ -10,22 +10,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef DEFINE_GLOBALS
-#define GLOBAL
-#define INIT(x) = x
-#else
-#define GLOBAL extern
-#define INIT(x)
-#endif
-
 /* ------------------- uneditable ------------------- */
 #define DUMMY_VALUE (0xdddddddddddddddd)
 #define default_kbase (0xffffffff81000000)
 #define kbase_offset (kbase - default_kbase)
 #define PAGE_SIZE (0x1000)
-GLOBAL uint64_t user_cs, user_ss, user_rsp, user_rflags;
-GLOBAL uint64_t kbase INIT(default_kbase);
-GLOBAL uint64_t kheap INIT(0);
+extern uint64_t user_cs, user_ss, user_rsp, user_rflags;
+extern uint64_t kbase;
+extern uint64_t kheap;
 
 /* -------------------- editable -------------------- */
 #define CONFIG_PHYSICAL_START (0x1000000)
@@ -49,7 +41,12 @@ GLOBAL uint64_t kheap INIT(0);
 #define mov_esp_0x39000000_ret (DUMMY_VALUE + kbase_offset)
 #define add_rsp_0x140_pop6_ret (DUMMY_VALUE + kbase_offset)
 
+// global variable initial values
+#define INIT_KBASE (default_kbase)
+#define INIT_KHEAP (0)
+#define INIT_KASLR (true)
+
 // config variables
-GLOBAL bool kaslr INIT(true);
+extern bool kaslr;
 
 #endif  // __KPWN_VARS_H
