@@ -68,6 +68,7 @@ u64 argmax_u64(const u64 *const array, const u64 len) {
 }
 
 static void sig_handler(i32 s) {
+    (void)s;
     return;
 }
 
