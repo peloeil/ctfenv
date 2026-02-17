@@ -1,5 +1,6 @@
 #include <unistd.h>
 
+#include "util.h"
 #include "vars.h"
 
 void spawn_shell(void) {
@@ -13,7 +14,7 @@ void spawn_shell(void) {
     char *argv[] = {"/bin/sh", NULL};
     char *envp[] = {NULL};
     execve("/bin/sh", argv, envp);
-    exit(EXIT_SUCCESS);
+    fatal("execve");
 }
 
 void save_state(void) {
