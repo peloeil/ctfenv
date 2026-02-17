@@ -38,7 +38,7 @@ __attribute__((noreturn)) static inline void fatal_at(const char *file, int line
             fatal_at(__FILE__, __LINE__, #expr); \
         __ret;                                   \
     })
-#define CHECK(expr) _CHECK_IMPL(expr, == -1)
+#define CHECK(expr) _CHECK_IMPL(expr, == ((__typeof__(expr))-1))
 #define CHECK_NZ(expr) _CHECK_IMPL(expr, != 0)
 #define CHECK_ZERO(expr) _CHECK_IMPL(expr, == 0)
 #define CHECK_NULL(expr) _CHECK_IMPL(expr, == NULL)
