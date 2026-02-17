@@ -39,6 +39,7 @@ void restore_state(void) {
     puts("[+] restoring state");
     if (user_rsp == 0) {
         puts("[-] please call save_state in advance");
+        exit(EXIT_FAILURE);
     }
     asm volatile(
         ".intel_syntax noprefix;"
