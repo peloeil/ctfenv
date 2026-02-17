@@ -17,13 +17,13 @@ void fatal(const char *str) {
     exit(1);
 }
 
-void dump_buffer(void *const buffer, const uint64_t row) {
-    uint64_t *ptr = buffer;
+void dump_buffer(void *const buffer, const u64 row) {
+    u64 *ptr = buffer;
     printf("[ ] buffer dump from %p\n", ptr);
-    for (uint64_t i = 0; i < row; i++) {
-        uint8_t ascii[9] = {0};
-        *(uint64_t *)ascii = ptr[i];
-        for (uint64_t j = 0; j < 8; j++) {
+    for (u64 i = 0; i < row; i++) {
+        u8 ascii[9] = {0};
+        *(u64 *)ascii = ptr[i];
+        for (u64 j = 0; j < 8; j++) {
             if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
                 ascii[j] = '.';
             }
@@ -43,10 +43,10 @@ bool is_valid_kbase(void) {
     return false;
 }
 
-uint64_t argmin_u64(const uint64_t *const array, const uint64_t len) {
-    uint64_t index = 0;
-    uint64_t min = UINT64_MAX;
-    for (uint64_t i = 0; i < len; i++) {
+u64 argmin_u64(const u64 *const array, const u64 len) {
+    u64 index = 0;
+    u64 min = UINT64_MAX;
+    for (u64 i = 0; i < len; i++) {
         if (min > array[i]) {
             min = array[i];
             index = i;
@@ -55,10 +55,10 @@ uint64_t argmin_u64(const uint64_t *const array, const uint64_t len) {
     return index;
 }
 
-uint64_t argmax_u64(const uint64_t *const array, const uint64_t len) {
-    uint64_t index = 0;
-    uint64_t max = 0;
-    for (uint64_t i = 0; i < len; i++) {
+u64 argmax_u64(const u64 *const array, const u64 len) {
+    u64 index = 0;
+    u64 max = 0;
+    for (u64 i = 0; i < len; i++) {
         if (max < array[i]) {
             max = array[i];
             index = i;
@@ -67,7 +67,7 @@ uint64_t argmax_u64(const uint64_t *const array, const uint64_t len) {
     return index;
 }
 
-static void sig_handler(int32_t s) {
+static void sig_handler(i32 s) {
     return;
 }
 

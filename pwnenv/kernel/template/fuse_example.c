@@ -13,7 +13,7 @@
 
 static const char *content = "Hello, World!\n";
 
-int32_t getattr_callback_example(const char *path, struct stat *stbuf) {
+i32 getattr_callback_example(const char *path, struct stat *stbuf) {
     puts("[ ] getattr_callback_example");
     memset(stbuf, 0, sizeof(struct stat));
 
@@ -27,12 +27,12 @@ int32_t getattr_callback_example(const char *path, struct stat *stbuf) {
     return -ENOENT;
 }
 
-int32_t open_callback_example(const char *path, struct fuse_file_info *fi) {
+i32 open_callback_example(const char *path, struct fuse_file_info *fi) {
     puts("[ ] open_callback_example");
     return 0;
 }
 
-int32_t read_callback_example(const char *path, char *buffer, uint64_t size, off_t offset,
+i32 read_callback_example(const char *path, char *buffer, u64 size, off_t offset,
                               struct fuse_file_info *fi) {
     puts("[ ] read_callback_example");
     printf("      path  : %s\n", path);

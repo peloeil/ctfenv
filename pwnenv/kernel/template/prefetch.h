@@ -1,9 +1,9 @@
 #ifndef __KPWN_PREFETCH_H
 #define __KPWN_PREFETCH_H
 
-#include <stdint.h>
+#include "types.h"
 
 // requires `-enable-kvm`
-uint64_t prefetch_kbase();
+u64 prefetch_kbase();
 
 #endif  //__KPWN_PREFETCH_H

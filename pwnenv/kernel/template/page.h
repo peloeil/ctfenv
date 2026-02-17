@@ -1,22 +1,22 @@
 #ifndef __KPWN_PAGE_H
 #define __KPWN_PAGE_H
 
-#include <stdint.h>
+#include "types.h"
 
-uint64_t align_to_page(const uint64_t addr);
-uint64_t vaddr_to_pgd_index(const uint64_t vaddr);
-uint64_t vaddr_to_pud_index(const uint64_t vaddr);
-uint64_t vaddr_to_pmd_index(const uint64_t vaddr);
-uint64_t vaddr_to_pte_index(const uint64_t vaddr);
-uint64_t vaddr_to_page_offset(const uint64_t vaddr);
-uint64_t pgd_index_to_vpart(const uint64_t pgd_index);
-uint64_t pud_index_to_vpart(const uint64_t pud_index);
-uint64_t pmd_index_to_vpart(const uint64_t pmd_index);
-uint64_t pte_index_to_vpart(const uint64_t pte_index);
-uint64_t phys_page_to_pte(const uint64_t paddr);
-uint64_t pte_to_phys_page(const uint64_t pte);
-uint64_t pt_index_to_vaddr(const uint64_t pgd_index, const uint64_t pud_index,
-                           const uint64_t pmd_index, const uint64_t pte_index,
-                           const uint64_t page_offset);
+u64 align_to_page(const u64 addr);
+u64 vaddr_to_pgd_index(const u64 vaddr);
+u64 vaddr_to_pud_index(const u64 vaddr);
+u64 vaddr_to_pmd_index(const u64 vaddr);
+u64 vaddr_to_pte_index(const u64 vaddr);
+u64 vaddr_to_page_offset(const u64 vaddr);
+u64 pgd_index_to_vpart(const u64 pgd_index);
+u64 pud_index_to_vpart(const u64 pud_index);
+u64 pmd_index_to_vpart(const u64 pmd_index);
+u64 pte_index_to_vpart(const u64 pte_index);
+u64 phys_page_to_pte(const u64 paddr);
+u64 pte_to_phys_page(const u64 pte);
+u64 pt_index_to_vaddr(const u64 pgd_index, const u64 pud_index,
+                           const u64 pmd_index, const u64 pte_index,
+                           const u64 page_offset);
 
 #endif  // __KPWN_PAGE_H

@@ -5,19 +5,19 @@
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "types.h"
 
 /* ------------------- uneditable ------------------- */
 #define DUMMY_VALUE (0xdddddddddddddddd)
 #define default_kbase (0xffffffff81000000)
 #define kbase_offset (kbase - default_kbase)
 #define PAGE_SIZE (0x1000)
-extern uint64_t user_cs, user_ss, user_rsp, user_rflags;
-extern uint64_t kbase;
-extern uint64_t kheap;
+extern u64 user_cs, user_ss, user_rsp, user_rflags;
+extern u64 kbase;
+extern u64 kheap;
 
 /* -------------------- editable -------------------- */
 #define CONFIG_PHYSICAL_START (0x1000000)

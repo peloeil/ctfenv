@@ -1,11 +1,11 @@
 #ifndef __KPWN_RET2USR_H
 #define __KPWN_RET2USR_H
 
-#include <stdint.h>
+#include "types.h"
 
 void spawn_shell(void);
 void save_state(void);
-void krop(uint64_t *ptr);
+void krop(u64 *ptr);
 
 // requires nosmep
 void restore_state(void);

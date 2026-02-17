@@ -2,17 +2,17 @@
 #define __KPWN_UTIL_H
 
 #include <errno.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"
+
 void fatal(const char *str);
-void dump_buffer(void *const buffer, const uint64_t row);
+void dump_buffer(void *const buffer, const u64 row);
 bool is_valid_kbase(void);
-uint64_t argmin_u64(const uint64_t *const array, const uint64_t len);
-uint64_t argmax_u64(const uint64_t *const array, const uint64_t len);
+u64 argmin_u64(const u64 *const array, const u64 len);
+u64 argmax_u64(const u64 *const array, const u64 len);
 void write_cpu_entry_area(char *payload);
 void stop_execution(char *str);
 
@@ -47,6 +47,6 @@ __attribute__((noreturn)) static inline void fatal_at(const char *file, int line
 #define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a < b ? b : a)
 #define FABS(a) (a > 0 ? a : -a)
-#define DECLARE_REG(reg) register uint64_t reg##_val asm(#reg)
+#define DECLARE_REG(reg) register u64 reg##_val asm(#reg)
 
 #endif  //__KPWN_UTIL_H

