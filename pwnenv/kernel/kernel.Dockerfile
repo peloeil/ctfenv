@@ -60,7 +60,7 @@ RUN curl https://mise.run | sh
 RUN git clone https://github.com/peloeil/dotfiles.git \
     && mkdir -p ~/.config \
     && cp -r dotfiles/dot_config/mise ~/.config/mise
-RUN mise install uv ripgrep node deno neovim ruff "npm:pyright"
+RUN mise install uv ripgrep node deno neovim ruff "npm:pyright" "npm:@openai/codex"
 RUN cp -r dotfiles/dot_config/nvim ~/.config/nvim \
     && cp -r dotfiles/dot_config/tmux ~/.config/tmux \
     && cp -r dotfiles/dot_config/private_fish ~/.config/fish \
