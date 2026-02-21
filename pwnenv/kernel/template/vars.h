@@ -11,8 +11,8 @@
 #include "types.h"
 
 /* ------------------- uneditable ------------------- */
-#define DUMMY_VALUE (0xdddddddddddddddd)
-#define default_kbase (0xffffffff81000000)
+#define DUMMY_VALUE (0xddddddddddddddddull)
+#define default_kbase (0xffffffff81000000ull)
 #define kbase_offset (kbase - default_kbase)
 #define PAGE_SIZE (0x1000)
 extern u64 user_cs, user_ss, user_rsp, user_rflags;
@@ -20,10 +20,13 @@ extern u64 kbase;
 extern u64 kheap;
 
 /* -------------------- editable -------------------- */
-#define CONFIG_PHYSICAL_START (0x1000000)
-#define CONFIG_PHYSICAL_ALIGN (0x200000)
-#define CONFIG_RANDOMIZE_BASE_MAX_OFFSET (0x40000000)
-#define PUD_SIZE (0x40000000)
+#define CONFIG_PHYSICAL_START (0x1000000ull)
+#define CONFIG_PHYSICAL_ALIGN (0x200000ull)
+#define CONFIG_RANDOMIZE_BASE_MAX_OFFSET (0x40000000ull)
+#define PUD_SIZE (0x40000000ull)
+#define PAGE_SIZE (0x1000ull)
+#define PAGE_OFFSET_BASE_LOWER_BOUND (0xffff888000000000ull)
+#define PAGE_OFFSET_BASE_UPPER_BOUND (0xfffffe0000000000ull)
 
 // addresses
 #define addr_prepare_kernel_cred (DUMMY_VALUE + kbase_offset)
