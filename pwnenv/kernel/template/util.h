@@ -15,6 +15,7 @@ u64 argmin_u64(const u64 *const array, const u64 len);
 u64 argmax_u64(const u64 *const array, const u64 len);
 void write_cpu_entry_area(char *payload);
 void stop_execution(char *str);
+void assign_cpu(const u64 core);
 
 __attribute__((noreturn)) static inline void fatal_at(const char *file, int line,
                                                       const char *expr) {

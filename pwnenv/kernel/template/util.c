@@ -121,3 +121,10 @@ void stop_execution(char *str) {
     puts(msg);
     getchar();
 }
+
+void assign_cpu(const u64 core) {
+    cpu_set_t cpu;
+    CPU_ZERO(&cpu);
+    CPU_SET(core, &cpu);
+    CHECK(sched_setaffinity(0, sizeof(cpu_set_t), &cpu));
+}
