@@ -39,7 +39,6 @@
   - `CONFIG_*` 系マクロ
   - `addr_*` / gadget 系マクロ（例: `addr_commit_creds` など）
   - `INIT_*` 系マクロ
-  - `kaslr` の初期方針（`INIT_KASLR` または exploit 側での運用）
 - `vars.h` の `/* uneditable */` 領域、および他の `src/template/*` は原則変更しない。
 
 ## Preserve Challenge Assets

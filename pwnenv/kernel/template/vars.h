@@ -43,10 +43,6 @@ extern u64 kheap;
 
 // global variable initial values
 #define INIT_KBASE (default_kbase)
-#define INIT_KHEAP (0)
-#define INIT_KASLR (true)
-
-// config variables
-extern bool kaslr;
+#define INIT_KHEAP (0ull)
 
 #endif  // __KPWN_VARS_H

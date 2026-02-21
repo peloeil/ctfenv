@@ -33,14 +33,8 @@ void dump_buffer(void *const buffer, const u64 row) {
 }
 
 bool is_valid_kbase(void) {
-    if (!kaslr && kbase == default_kbase) {
-        return true;
-    }
-    if (kaslr && ((kbase >> 32) == 0xffffffff && (kbase & 0xfffff) == 0 && default_kbase <= kbase &&
-                  kbase <= 0xffffffffc0000000)) {
-        return true;
-    }
-    return false;
+    return ((kbase >> 32) == 0xffffffff && (kbase & 0xfffff) == 0 && default_kbase <= kbase &&
+            kbase <= 0xffffffffc0000000);
 }
 
 u64 argmin_u64(const u64 *const array, const u64 len) {
