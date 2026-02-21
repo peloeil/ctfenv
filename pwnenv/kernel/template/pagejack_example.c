@@ -42,7 +42,7 @@ int main(void) {
             usleep(10 * 1000);
         }
         setuid(0);
-        spawn_shell();
+        spawn_root_shell();
         exit(0);
     }
 

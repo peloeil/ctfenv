@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-void spawn_shell(void);
+void spawn_root_shell(void);
 void save_state(void);
 void krop(u64 *ptr);
 

