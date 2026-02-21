@@ -112,7 +112,7 @@ void stop_execution(void) {
     getchar();
 }
 
-void assign_cpu(const u64 core) {
+void assign_to_core(const u64 core) {
     cpu_set_t cpu;
     CPU_ZERO(&cpu);
     CPU_SET(core, &cpu);
