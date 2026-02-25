@@ -35,9 +35,9 @@ void *fault_handler_thread_example(void *arg) {
             fatal("read(uffd)");
         }
         assert(msg.event == UFFD_EVENT_PAGEFAULT);
-        puts("[ ] page fault occurs");
-        printf("      uffd: flag = %#llx\n", msg.arg.pagefault.flags);
-        printf("      uffd: addr = %#llx\n", msg.arg.pagefault.address);
+        log_info("page fault occurs");
+        log_with_prefix("     ", "uffd: flag = %#llx", msg.arg.pagefault.flags);
+        log_with_prefix("     ", "uffd: addr = %#llx", msg.arg.pagefault.address);
 
         // 要求されたページとして返すデータを設定
         static int fault_cnt = 0;
@@ -59,7 +59,7 @@ void *fault_handler_thread_example(void *arg) {
 }
 
 void register_uffd(void *(*handler)(void *), void *const addr, const u64 len) {
-    printf("[ ] registering userfaultfd handler to [%p, %p)\n", addr, addr + len);
+    log_info("registering userfaultfd handler to [%p, %p)", addr, addr + len);
     // userfaultfd の作成
     const i64 uffd = CHECK(syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK));
 

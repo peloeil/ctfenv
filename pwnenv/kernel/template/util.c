@@ -2,6 +2,7 @@
 
 #include "util.h"
 
+#include <stdarg.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,14 +13,68 @@
 
 #include "vars.h"
 
+static void vlog_with_prefix(const char *const prefix, const char *const fmt, va_list ap) {
+    const char *const safe_prefix = prefix == NULL ? "[ ]" : prefix;
+    fputs(safe_prefix, stdout);
+    fputc(' ', stdout);
+
+    if (fmt == NULL || *fmt == '\0') {
+        fputc('\n', stdout);
+        return;
+    }
+
+    vprintf(fmt, ap);
+
+    const char *p = fmt;
+    while (*p != '\0') {
+        p++;
+    }
+    if (*(p - 1) != '\n') {
+        fputc('\n', stdout);
+    }
+}
+
+void log_with_prefix(const char *prefix, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vlog_with_prefix(prefix, fmt, ap);
+    va_end(ap);
+}
+
+void log_info(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vlog_with_prefix("[ ]", fmt, ap);
+    va_end(ap);
+}
+
+void log_success(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vlog_with_prefix("[+]", fmt, ap);
+    va_end(ap);
+}
+
+void log_error(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vlog_with_prefix("[-]", fmt, ap);
+    va_end(ap);
+}
+
 void fatal(const char *str) {
-    perror(str);
+    const char *msg = str == NULL ? "fatal" : str;
+    if (errno == 0) {
+        log_error("%s", msg);
+    } else {
+        log_error("%s: %s", msg, strerror(errno));
+    }
     exit(1);
 }
 
 void dump_buffer(void *const buffer, const u64 row) {
     u64 *ptr = buffer;
-    printf("[ ] buffer dump from %p\n", ptr);
+    log_info("buffer dump from %p", ptr);
     for (u64 i = 0; i < row; i++) {
         u8 ascii[9] = {0};
         *(u64 *)ascii = ptr[i];
@@ -28,7 +83,7 @@ void dump_buffer(void *const buffer, const u64 row) {
                 ascii[j] = '.';
             }
         }
-        printf("      %p|+0x%03lx: 0x%016lx  |%.8s|\n", &ptr[i], i * 8, ptr[i], ascii);
+        log_with_prefix("     ", "%p|+0x%03lx: 0x%016lx  |%.8s|", &ptr[i], i * 8, ptr[i], ascii);
     }
 }
 
@@ -67,7 +122,7 @@ static void sig_handler(i32 s) {
 }
 
 void write_cpu_entry_area(char *payload) {
-    puts("[ ] writing cpu_entry_area");
+    log_info("writing cpu_entry_area");
     if (CHECK(fork()) > 0) {
         sleep(1);
         return;
@@ -108,7 +163,7 @@ void write_cpu_entry_area(char *payload) {
 }
 
 void stop_execution(void) {
-    puts("[ ] waiting for input...");
+    log_info("waiting for input...");
     getchar();
 }
 

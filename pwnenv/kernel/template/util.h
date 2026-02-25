@@ -16,16 +16,21 @@ u64 argmax_u64(const u64 *const array, const u64 len);
 void write_cpu_entry_area(char *payload);
 void stop_execution(void);
 void assign_to_core(const u64 core);
+void log_with_prefix(const char *prefix, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+void log_info(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void log_success(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void log_error(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 __attribute__((noreturn)) static inline void fatal_at(const char *file, int line,
                                                       const char *expr) {
     int saved_errno = errno;
 
     if (saved_errno) {
-        fprintf(stderr, "%s:%d: fatal: %s failed (errno=%d: %s)\n", file, line, expr, saved_errno,
-                strerror(saved_errno));
+        log_error("%s:%d: fatal: %s failed (errno=%d: %s)", file, line, expr, saved_errno,
+                  strerror(saved_errno));
     } else {
-        fprintf(stderr, "%s:%d: fatal: %s failed\n", file, line, expr);
+        log_error("%s:%d: fatal: %s failed", file, line, expr);
     }
     abort();
 }

