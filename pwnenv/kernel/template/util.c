@@ -24,11 +24,11 @@ void dump_buffer(void *const buffer, const u64 row) {
         u8 ascii[9] = {0};
         *(u64 *)ascii = ptr[i];
         for (u64 j = 0; j < 8; j++) {
-            if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
+            if (ascii[j] < 0x20 || 0x7e < ascii[j]) {
                 ascii[j] = '.';
             }
         }
-        printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", &ptr[i], i * 8, ptr[i], ascii);
+        printf("      %p|+0x%03lx: 0x%016lx  |%.8s|\n", &ptr[i], i * 8, ptr[i], ascii);
     }
 }
 

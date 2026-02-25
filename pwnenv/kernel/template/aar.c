@@ -125,11 +125,11 @@ void dump_buffer_aar(void *const addr_start, const u64 row, u32 (*aar32)(void *)
             u8 ascii[9] = {0};
             *(u64 *)ascii = val;
             for (u64 j = 0; j < 8; j++) {
-                if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
+                if (ascii[j] < 0x20 || 0x7e < ascii[j]) {
                     ascii[j] = '.';
                 }
             }
-            printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", addr_start + i * 8, i * 8, val, ascii);
+            printf("      %p|+0x%03lx: 0x%016lx  |%.8s|\n", addr_start + i * 8, i * 8, val, ascii);
         }
     } else if (aar64 != NULL) {
         for (u64 i = 0; i < row; i++) {
@@ -137,11 +137,11 @@ void dump_buffer_aar(void *const addr_start, const u64 row, u32 (*aar32)(void *)
             u8 ascii[9] = {0};
             *(u64 *)ascii = val;
             for (u64 j = 0; j < 8; j++) {
-                if (ascii[j] < 0x20 || ascii[j] == 0x7f) {
+                if (ascii[j] < 0x20 || 0x7e < ascii[j]) {
                     ascii[j] = '.';
                 }
             }
-            printf("      %p|+0x%03lx: 0x%016lx  |%s|\n", addr_start + i * 8, i * 8, val, ascii);
+            printf("      %p|+0x%03lx: 0x%016lx  |%.8s|\n", addr_start + i * 8, i * 8, val, ascii);
         }
     }
 }
