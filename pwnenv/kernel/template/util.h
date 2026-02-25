@@ -14,7 +14,7 @@ bool is_valid_kbase(void);
 u64 argmin_u64(const u64 *const array, const u64 len);
 u64 argmax_u64(const u64 *const array, const u64 len);
 void write_cpu_entry_area(char *payload);
-void stop_execution(void);
+void breakpoint(void);
 void assign_to_core(const u64 core);
 void log_with_prefix(const char *prefix, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
