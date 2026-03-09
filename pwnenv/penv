@@ -14,8 +14,38 @@ state_record_created() {
     printf 'created\t%s\n' "$1" >>"$STATE_FILE"
 }
 
+state_record_flag() {
+    printf 'flag\t%s\n' "$1" >>"$STATE_FILE"
+}
+
 state_record_rename() {
     printf 'renamed\t%s\t%s\n' "$1" "$2" >>"$STATE_FILE"
+}
+
+state_has_flag() {
+    [ -f "$STATE_FILE" ] || return 1
+    awk -F '\t' -v flag="$1" '
+        $1 == "flag" && $2 == flag {
+            found = 1
+        }
+        END {
+            exit(found ? 0 : 1)
+        }
+    ' "$STATE_FILE"
+}
+
+state_created_paths() {
+    [ -f "$STATE_FILE" ] || return 0
+    awk -F '\t' '$1 == "created" { print $2 }' "$STATE_FILE"
+}
+
+state_renamed_paths() {
+    [ -f "$STATE_FILE" ] || return 0
+    awk -F '\t' '$1 == "renamed" { print $2 "\t" $3 }' "$STATE_FILE"
+}
+
+state_clear() {
+    rm -f "$STATE_FILE"
 }
 
 # -------------------------------------
@@ -337,6 +367,7 @@ add_pwnenv_service() {
     write_pwnenv_snippet "$snippet" "$dockerfile" "$service_name" "$version" "$share_network" "$with_kvm"
     insert_snippet_under_services compose.yaml "$snippet"
     rm -f "$snippet"
+    state_record_flag "compose_pwnenv_added"
 }
 
 ensure_compose_with_pwnenv() {
@@ -360,6 +391,7 @@ ensure_compose_with_pwnenv() {
     } >compose.yaml
     rm -f "$snippet"
     state_record_created "compose.yaml"
+    state_record_flag "compose_created"
 }
 
 copy_mode_files_if_missing() {
@@ -373,23 +405,47 @@ copy_mode_files_if_missing() {
 }
 
 remove_pwnenv_service() {
+    local compose_file="${1:-compose.yaml}"
     local tmp
 
-    [ -f compose.yaml ] || return 0
+    [ -f "$compose_file" ] || return 0
     tmp="$(mktemp)"
     awk '
-        BEGIN { skip = 0 }
-        /^  pwnenv:/ { skip = 1; next }
+        BEGIN {
+            in_services = 0
+            skip = 0
+        }
+        /^services:[[:space:]]*$/ {
+            in_services = 1
+            print
+            next
+        }
+        in_services && /^[^[:space:]]/ {
+            in_services = 0
+            skip = 0
+            print
+            next
+        }
+        in_services && /^  pwnenv:[[:space:]]*$/ {
+            skip = 1
+            next
+        }
         skip {
-            if (match($0, /^[[:space:]]{2}[A-Za-z0-9_.-]+:/)) {
+            if ($0 ~ /^  [A-Za-z0-9_.-]+:[[:space:]]*$/) {
+                skip = 0
+                print
+                next
+            }
+            if ($0 ~ /^[^[:space:]]/) {
+                in_services = 0
                 skip = 0
                 print
             }
             next
         }
         { print }
-    ' compose.yaml >"$tmp"
-    mv "$tmp" compose.yaml
+    ' "$compose_file" >"$tmp"
+    mv "$tmp" "$compose_file"
 }
 
 escape_sed() {
@@ -559,6 +615,53 @@ EOF
     if [ -n "$created_var" ]; then
         printf -v "$created_var" '%s' "$created"
     fi
+}
+
+backup_and_remove() {
+    local path="$1"
+    local ts="$2"
+    local backup_path
+
+    [ -e "$path" ] || return 0
+
+    backup_path="${path}.bak.${ts}"
+    if [ -d "$path" ]; then
+        cp -a "$path" "$backup_path"
+        rm -rf "$path"
+    else
+        cp -p "$path" "$backup_path"
+        rm -f "$path"
+    fi
+}
+
+remove_path() {
+    local path="$1"
+
+    [ -e "$path" ] || return 0
+    if [ -d "$path" ]; then
+        rm -rf "$path"
+    else
+        rm -f "$path"
+    fi
+}
+
+remove_created_paths() {
+    local path
+
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        remove_path "$path"
+    done < <(state_created_paths | awk '!seen[$0]++')
+}
+
+remove_glob_matches() {
+    local pattern="$1"
+    local path
+
+    for path in $pattern; do
+        [ -e "$path" ] || continue
+        remove_path "$path"
+    done
 }
 
 strip_trailing_newlines() {
@@ -863,30 +966,48 @@ penv_check() {
 # penv clean
 penv_clean() {
     local ts
+    local compose_file
+    local path
+    local old_path new_path
 
-    if [ -f exploit.py ]; then
-        ts="$(date +%Y%m%d%H%M%S)"
-        cp -p exploit.py "exploit.py.bak.${ts}"
-        rm -f exploit.py
+    ts="$(date +%Y%m%d%H%M%S)"
+
+    for path in exploit.py gdb.py attach.sh dev.sh upload.py src; do
+        if [ -e "$path" ]; then
+            backup_and_remove "$path" "$ts"
+        fi
+    done
+    if [ -f Makefile ]; then
+        backup_and_remove "Makefile" "$ts"
     fi
 
-    remove_pwnenv_service
+    compose_file="$(detect_compose_file || true)"
+    if [ -n "$compose_file" ]; then
+        if state_has_flag "compose_created"; then
+            remove_path "$compose_file"
+        else
+            remove_pwnenv_service "$compose_file"
+        fi
+    fi
 
-    rm -f \
-        bare.Dockerfile \
-        stack.Dockerfile \
-        heap.Dockerfile \
-        kernel.Dockerfile \
-        gdb.py \
-        attach.sh \
-        dev.sh \
-        upload.py \
-        solve.py \
-        rootfs_dev.cpio \
-        rootfs_dev.ext2 \
-        rootfs_dev.ext3 \
-        rootfs_dev.ext4 \
-        *_patched
+    while IFS=$'\t' read -r old_path new_path; do
+        [ -n "${old_path:-}" ] || continue
+        [ -n "${new_path:-}" ] || continue
+        [ -e "$new_path" ] || continue
+        [ -e "$old_path" ] && continue
+        mv "$new_path" "$old_path"
+    done < <(state_renamed_paths)
+
+    remove_created_paths
+    remove_glob_matches "ld-*.so*"
+    remove_glob_matches "*_patched"
+    remove_path "solve.py"
+    remove_path "rootdir"
+    remove_path "rootfs_dev.cpio"
+    remove_path "rootfs_dev.ext2"
+    remove_path "rootfs_dev.ext3"
+    remove_path "rootfs_dev.ext4"
+    state_clear
 }
 
 # penv init
