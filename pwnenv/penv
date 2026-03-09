@@ -561,7 +561,6 @@ extract_libc_from_container() {
             for path in \
                 /lib/x86_64-linux-gnu/libc.so.6 \
                 /usr/lib/x86_64-linux-gnu/libc.so.6 \
-                /usr/lib64/libc.so.6 \
                 /lib64/libc.so.6 \
                 /usr/lib/libc.so.6 \
                 /lib/libc.so.6
