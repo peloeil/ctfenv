@@ -559,6 +559,11 @@ extract_libc_from_container() {
     docker compose -f compose.yaml run --rm --no-deps -T "$service_name" \
         sh -c '
             for path in \
+                /srv/lib/x86_64-linux-gnu/libc.so.6 \
+                /srv/usr/lib/x86_64-linux-gnu/libc.so.6 \
+                /srv/lib64/libc.so.6 \
+                /srv/usr/lib/libc.so.6 \
+                /srv/lib/libc.so.6 \
                 /lib/x86_64-linux-gnu/libc.so.6 \
                 /usr/lib/x86_64-linux-gnu/libc.so.6 \
                 /lib64/libc.so.6 \

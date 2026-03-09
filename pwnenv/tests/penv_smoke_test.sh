@@ -115,6 +115,34 @@ EOF
     fi
 }
 
+make_stub_docker_for_jail_libc() {
+    local bin_dir="$1"
+
+    mkdir -p "$bin_dir"
+    cat >"$bin_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$#" -lt 1 ] || [ "$1" != "compose" ]; then
+    printf 'unexpected docker invocation\n' >&2
+    exit 1
+fi
+
+script="${*: -1}"
+case "$script" in
+*"/srv/lib/x86_64-linux-gnu/libc.so.6"*"/lib/x86_64-linux-gnu/libc.so.6"*)
+    printf 'challenge-libc\n'
+    ;;
+*)
+    printf 'unexpected libc lookup order\n' >&2
+    exit 1
+    ;;
+esac
+EOF
+    chmod +x "$bin_dir/docker"
+}
+
 run_bare_test() {
     local tmpdir
 
@@ -181,6 +209,30 @@ EOF
         assert_missing libc.so.6
         assert_exists tmux.conf
         assert_missing .penv-state
+    )
+}
+
+run_stack_extracts_srv_libc_test() {
+    local tmpdir
+
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' RETURN
+
+    make_stub_pwninit "$tmpdir/bin" 0
+    make_stub_docker_for_jail_libc "$tmpdir/bin"
+    cp /bin/true "$tmpdir/chall"
+    cat >"$tmpdir/compose.yaml" <<'EOF'
+services:
+  chall:
+    image: example/chall
+    ports:
+      - "31337:1337"
+EOF
+
+    (
+        cd "$tmpdir"
+        PATH="$tmpdir/bin:$PATH" "$PENV" init stack
+        assert_contains libc.so.6 'challenge-libc'
     )
 }
 
@@ -309,6 +361,7 @@ EOF
 
 run_bare_test
 run_stack_test
+run_stack_extracts_srv_libc_test
 run_heap_test
 run_heap_requires_dockerfile_test
 run_info_check_no_side_effect_test
