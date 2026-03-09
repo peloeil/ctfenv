@@ -68,6 +68,7 @@ find_libc() {
 make_stub_pwninit() {
     local bin_dir="$1"
     local with_ld="${2:-0}"
+    local noisy_stdout="${3:-0}"
 
     mkdir -p "$bin_dir"
     cat >"$bin_dir/pwninit" <<'EOF'
@@ -92,6 +93,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 cp -- "${bin#./}" "${bin#./}_patched"
+if [ "${PENV_TEST_STDOUT_WARNING:-0}" = "1" ]; then
+    printf 'warning: simulated stdout noise\n'
+fi
 if [ "${PENV_TEST_WITH_LD:-0}" = "1" ]; then
     : > ld-linux-x86-64.so.2
 fi
@@ -103,6 +107,11 @@ EOF
         export PENV_TEST_WITH_LD=1
     else
         export PENV_TEST_WITH_LD=0
+    fi
+    if [ "$noisy_stdout" = "1" ]; then
+        export PENV_TEST_STDOUT_WARNING=1
+    else
+        export PENV_TEST_STDOUT_WARNING=0
     fi
 }
 
@@ -135,7 +144,7 @@ run_stack_test() {
     trap 'rm -rf "$tmpdir"' RETURN
 
     libc="$(find_libc)"
-    make_stub_pwninit "$tmpdir/bin"
+    make_stub_pwninit "$tmpdir/bin" 0 1
     cp /bin/true "$tmpdir/chall"
     cp "$libc" "$tmpdir/libc-2.39.so"
     cat >"$tmpdir/tmux.conf" <<'EOF'

@@ -519,7 +519,7 @@ ensure_libc_available() {
 
 run_pwninit() {
     command -v pwninit >/dev/null 2>&1 || die "pwninit not found"
-    pwninit --bin "./$1" --libc ./libc.so.6
+    pwninit --bin "./$1" --libc ./libc.so.6 >&2
     rm -f solve.py
 }
 
@@ -557,7 +557,21 @@ extract_libc_from_container() {
     local service_name="$1"
 
     docker compose -f compose.yaml run --rm --no-deps -T "$service_name" \
-        sh -c "cat /lib/x86_64-linux-gnu/libc.so.6 || cat /lib64/libc.so.6 || cat /lib/libc.so.6" >libc.so.6
+        sh -c '
+            for path in \
+                /lib/x86_64-linux-gnu/libc.so.6 \
+                /usr/lib/x86_64-linux-gnu/libc.so.6 \
+                /usr/lib64/libc.so.6 \
+                /lib64/libc.so.6 \
+                /usr/lib/libc.so.6 \
+                /lib/libc.so.6
+            do
+                if [ -f "$path" ]; then
+                    exec cat "$path"
+                fi
+            done
+            exit 1
+        ' >libc.so.6
     state_record_created "libc.so.6"
 }
 
