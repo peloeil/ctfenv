@@ -164,6 +164,10 @@ compose_has_pwnenv() {
     grep -qE '^[[:space:]]{2}pwnenv:' "$compose_file" || return 1
 }
 
+compose_file_for_read() {
+    detect_compose_file || true
+}
+
 load_compose_context() {
     local service_name_var="$1"
     local port_var="$2"
@@ -741,14 +745,15 @@ extract_vmlinux() {
 
 # penv info
 penv_info() {
-    local binary service_name port ld_file ubuntu_version patched
+    local binary compose_file service_name port ld_file ubuntu_version patched
 
-    if normalize_compose_file; then
-        service_name="$(get_service_name)"
+    compose_file="$(compose_file_for_read)"
+    if [ -n "$compose_file" ]; then
+        service_name="$(get_service_name "$compose_file" || true)"
     else
         service_name=""
     fi
-    port="$(get_service_port "$service_name")"
+    port="$(get_service_port "$service_name" "${compose_file:-compose.yaml}")"
 
     if binary="$(detect_binary_optional)"; then
         :
@@ -764,8 +769,7 @@ penv_info() {
     ld_file="$(detect_ld_file || true)"
 
     if [ -f Dockerfile ]; then
-        ubuntu_version="$(awk '/^FROM[[:space:]]+ubuntu:[^@]+@/ { sub(/^FROM[[:space:]]+ubuntu:/, ""); sub(/@.*/, ""); print; exit }' Dockerfile)"
-        ubuntu_version="$(printf '%s' "$ubuntu_version" | tr -d "\"'")"
+        ubuntu_version="$(get_ubuntu_version_optional Dockerfile || true)"
     else
         ubuntu_version=""
     fi
@@ -776,14 +780,16 @@ penv_info() {
     printf 'ld: %s\n' "${ld_file:-missing}"
     printf 'dockerfile: %s\n' "$([ -f Dockerfile ] && echo Dockerfile || echo missing)"
     [ -n "$ubuntu_version" ] && printf 'ubuntu: %s\n' "$ubuntu_version"
-    printf 'compose: %s\n' "$([ -f compose.yaml ] && echo compose.yaml || echo missing)"
+    printf 'compose: %s\n' "${compose_file:-missing}"
     printf 'service: %s\n' "${service_name:-missing}"
     printf 'port: %s\n' "${port:-missing}"
 }
 
 # penv check
 penv_check() {
-    local binary cpio_file ext_file mode
+    local binary compose_file cpio_file ext_file mode
+
+    compose_file="$(compose_file_for_read)"
 
     if [ -f bzImage ] || detect_cpio_file >/dev/null 2>&1 || detect_ext_file >/dev/null 2>&1; then
         mode="kernel"
@@ -807,7 +813,11 @@ penv_check() {
     printf 'binary: %s\n' "${binary:-missing}"
     printf 'libc: %s\n' "$([ -f libc.so.6 ] && echo present || echo missing)"
     printf 'dockerfile: %s\n' "$([ -f Dockerfile ] && echo present || echo missing)"
-    printf 'compose: %s\n' "$([ -f compose.yaml ] && echo present || echo missing)"
+    if [ -n "$compose_file" ]; then
+        printf 'compose: %s\n' "$compose_file"
+    else
+        printf 'compose: missing\n'
+    fi
     printf 'bzImage: %s\n' "$([ -f bzImage ] && echo present || echo missing)"
     printf 'run.sh: %s\n' "$([ -f run.sh ] && echo present || echo missing)"
     if cpio_file="$(detect_cpio_file 2>/dev/null)"; then
