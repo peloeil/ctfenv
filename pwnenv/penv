@@ -220,6 +220,9 @@ copy_mode_file_if_missing() {
 
     if [ ! -e "$dst" ]; then
         cp -p "$SCRIPT_DIR/$mode_dir/$src" "$dst"
+        if [ "$(basename "$dst")" = "exploit.py" ]; then
+            chmod +x "$dst"
+        fi
         state_record_created "$dst"
         created="1"
     fi

@@ -32,6 +32,12 @@ assert_exists() {
     [ -e "$path" ] || die "expected $path to exist"
 }
 
+assert_executable() {
+    local path="$1"
+
+    [ -x "$path" ] || die "expected $path to be executable"
+}
+
 assert_glob_exists() {
     local pattern="$1"
     local path
@@ -156,6 +162,7 @@ run_bare_test() {
         "$PENV" init bare
         assert_contains exploit.py 'ELF("./chall")'
         assert_not_contains exploit.py 'pwntools'
+        assert_executable exploit.py
         assert_exists Makefile
         assert_contains compose.yaml '^services:'
         assert_contains compose.yaml '^  pwnenv:'
@@ -193,6 +200,7 @@ EOF
         PATH="$tmpdir/bin:$PATH" "$PENV" init stack
         assert_contains exploit.py 'chall_patched'
         assert_not_contains exploit.py 'pwntools'
+        assert_executable exploit.py
         assert_contains compose.yaml '^  pwnenv:'
         assert_contains compose.yaml '^volumes:'
         assert_contains stack.Dockerfile 'WORKDIR /home/pwn/stack'
@@ -233,6 +241,7 @@ EOF
         cd "$tmpdir"
         PATH="$tmpdir/bin:$PATH" "$PENV" init stack
         assert_contains libc.so.6 'challenge-libc'
+        assert_executable exploit.py
     )
 }
 
@@ -266,6 +275,7 @@ EOF
         assert_contains compose.yaml 'VERSION: "22.04"'
         assert_contains attach.sh 'chall_patched'
         assert_contains exploit.py 'Socket("localhost", 4444)'
+        assert_executable exploit.py
         assert_contains compose.yaml 'network_mode: "service:chall"'
         assert_not_contains compose.yaml '/dev/kvm'
         assert_contains compose.yaml '^networks:'
