@@ -18,7 +18,7 @@ void spawn_root_shell(void) {
 }
 
 void save_state(void) {
-    log_info("saving user cs, ss, rsp, and rflags");
+    log_info("saving user cs, ss, sp, and flags");
     asm volatile(
         ".intel_syntax noprefix;"
         "mov %0, cs;"
