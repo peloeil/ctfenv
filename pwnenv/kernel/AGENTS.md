@@ -29,6 +29,9 @@
   - `kmem_cache_cpu` 周辺の値は `OBJS_PER_SLAB` のように対象を連想しやすい命名にする。
   - `ioctl` の `cmd` を表すマクロは可読性のために定義してよい。
   - `ioctl` `cmd` など exploit 本体に直接関わらない補助マクロは、原則として `main` の下に配置する。
+  - グローバルに効く設定ではないマクロは、変数と同様に必要な直前で定義する。
+  - グローバル設定マクロの例: `CPU_PARTIAL`, `NUM_PIPE_SPRAY`。
+  - 直前定義するマクロの例: `MSG_SIZE`（`struct msg_msg` のサイズ）、`PIPE_BUFSIZE`（`struct pipe_buffer` のリングバッファサイズ）、`OFFSET_SETUID`（`setuid` の `kbase` からのオフセット）。
 - 変数は「本当に必要なものだけ」を「必要な直前」で宣言する。
   - 可能な限り `const` を付ける。
 - 型はサイズが明示的なものを使う。
